@@ -12,6 +12,8 @@ const QuickScan = () => {
     const [image, setImage] = useState(null);
     const [preview, setPreview] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [showCamera, setShowCamera] = useState(false);
+    const [stream, setStream] = useState(null);
     const [error, setError] = useState('');
 
     // Fetch products for typeahead
@@ -45,6 +47,50 @@ const QuickScan = () => {
             setImage(file);
             setPreview(URL.createObjectURL(file));
         }
+    };
+
+    const handleOpenCamera = async () => {
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+            });
+            setStream(mediaStream);
+            setShowCamera(true);
+
+            // Wait for video element to be available
+            setTimeout(() => {
+                const video = document.getElementById('cameraVideo');
+                if (video) {
+                    video.srcObject = mediaStream;
+                }
+            }, 100);
+        } catch (err) {
+            setError('Camera access denied or not available');
+            console.error('Camera error:', err);
+        }
+    };
+
+    const handleCapturePhoto = () => {
+        const video = document.getElementById('cameraVideo');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+
+        canvas.toBlob((blob) => {
+            const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
+            setImage(file);
+            setPreview(URL.createObjectURL(blob));
+            handleCloseCamera();
+        }, 'image/jpeg', 0.95);
+    };
+
+    const handleCloseCamera = () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            setStream(null);
+        }
+        setShowCamera(false);
     };
 
     const handleScan = async () => {
@@ -219,7 +265,11 @@ const QuickScan = () => {
                             <div className="h-px flex-1 bg-border"></div>
                         </div>
 
-                        <button className="mt-4 w-full btn btn-outline flex items-center justify-center gap-2">
+                        <button
+                            className="mt-4 w-full btn btn-outline flex items-center justify-center gap-2"
+                            onClick={handleOpenCamera}
+                            type="button"
+                        >
                             <Camera size={18} />
                             Open Camera
                         </button>
@@ -245,6 +295,46 @@ const QuickScan = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Camera Modal */}
+            {showCamera && (
+                <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl max-w-2xl w-full p-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold text-primary">Capture Photo</h3>
+                            <button
+                                onClick={handleCloseCamera}
+                                className="text-text-muted hover:text-primary"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="relative bg-black rounded-lg overflow-hidden">
+                            <video
+                                id="cameraVideo"
+                                autoPlay
+                                playsInline
+                                className="w-full h-auto"
+                            />
+                        </div>
+                        <div className="mt-4 flex gap-3">
+                            <button
+                                onClick={handleCapturePhoto}
+                                className="flex-1 btn btn-primary flex items-center justify-center gap-2"
+                            >
+                                <Camera size={18} />
+                                Capture Photo
+                            </button>
+                            <button
+                                onClick={handleCloseCamera}
+                                className="flex-1 btn btn-outline"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

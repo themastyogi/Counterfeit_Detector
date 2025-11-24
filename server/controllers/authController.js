@@ -180,13 +180,19 @@ const forgotPassword = async (req, res) => {
         user.resetTokenExpiry = resetTokenExpiry;
         await user.save();
 
-        // In production, send email with reset link
-        // For now, return the token (for testing)
-        res.json({
-            message: 'Password reset token generated',
-            resetToken, // Remove this in production
-            resetLink: `http://localhost:5173/reset-password?token=${resetToken}`
-        });
+        // Send password reset email via SendGrid
+        const { sendPasswordResetEmail } = require('../services/emailService');
+        const emailResult = await sendPasswordResetEmail(user.email, resetToken);
+
+        if (emailResult.success) {
+            res.json({
+                message: 'Password reset email sent. Please check your inbox.'
+            });
+        } else {
+            res.status(500).json({
+                message: 'Failed to send reset email. Please try again later.'
+            });
+        }
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }

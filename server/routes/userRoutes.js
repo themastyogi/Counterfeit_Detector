@@ -54,6 +54,7 @@ router.put('/:id', verifyToken, isSystemAdmin, async (req, res) => {
         if (email) user.email = email;
         if (role) user.role = role;
         if (status) user.status = status;
+        if (req.body.tenant_id !== undefined) user.tenant_id = req.body.tenant_id || null;
         if (password) {
             user.password = await bcrypt.hash(password, 10);
         }

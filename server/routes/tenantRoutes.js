@@ -12,9 +12,12 @@ const User = require('../models/User');
 // Get all tenants
 router.get('/', verifyToken, isSystemAdmin, async (req, res) => {
     try {
+        console.log('🏢 GET /api/tenants - Fetching all tenants');
         const tenants = await Tenant.find().sort({ createdAt: -1 });
+        console.log(`📊 Found ${tenants.length} tenants:`, tenants.map(t => t.name));
         res.json(tenants);
     } catch (error) {
+        console.error('❌ Error fetching tenants:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });

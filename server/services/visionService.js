@@ -67,6 +67,7 @@ const analyzeImage = async (imagePath) => {
                 image: { source: { filename: imagePath } },
                 features: [
                     { type: 'LABEL_DETECTION', maxResults: 10 },
+                    { type: 'LOGO_DETECTION', maxResults: 5 },
                     { type: 'TEXT_DETECTION' },
                     { type: 'SAFE_SEARCH_DETECTION' },
                     { type: 'IMAGE_PROPERTIES' }
@@ -76,6 +77,7 @@ const analyzeImage = async (imagePath) => {
             return {
                 dataSource: 'CLOUD_VISION_API', // Indicator
                 labels: result.labelAnnotations || [],
+                logos: result.logoAnnotations || [],
                 safeSearch: result.safeSearchAnnotation || {},
                 textDetection: {
                     text: result.fullTextAnnotation?.text || '',

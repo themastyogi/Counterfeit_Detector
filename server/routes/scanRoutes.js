@@ -81,6 +81,7 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
         console.log('🔎 Analyzing image...');
         const { analyzeImage } = require('../services/visionService');
         const { validateCategory } = require('../services/categoryValidation');
+        const { analyzeAuthenticity } = require('../services/authenticityDetection');
 
         setTimeout(async () => {
             try {
@@ -103,6 +104,10 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                 const categoryValidation = validateCategory(productCategory, visionResult.labels);
                 console.log('🔍 Category validation:', categoryValidation.isMatch ? '✅ Match' : '❌ Mismatch');
 
+                // Analyze authenticity (logo, text quality, patterns)
+                const authenticityResult = analyzeAuthenticity(visionResult, productCategory, categoryValidation);
+                console.log('🔐 Authenticity analysis:', authenticityResult.riskScore > 50 ? '⚠️ High risk' : '✅ Low risk');
+
                 // Calculate risk score based on category match and other factors
                 let riskScore = 0;
                 let status = 'LIKELY_GENUINE';
@@ -118,6 +123,10 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                     riskScore += Math.max(0, (1 - categoryValidation.confidence) * 30);
                     flags['Category Match'] = `Matched: ${categoryValidation.matchedLabels.join(', ')}`;
                 }
+
+                // Add authenticity risk score and flags
+                riskScore += authenticityResult.riskScore;
+                Object.assign(flags, authenticityResult.flags);
 
                 // Check safe search (spoof detection)
                 if (visionResult.safeSearch?.spoof === 'POSSIBLE' || visionResult.safeSearch?.spoof === 'LIKELY') {

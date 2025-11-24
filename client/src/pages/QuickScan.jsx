@@ -151,7 +151,7 @@ const QuickScan = () => {
                             >
                                 <option value="">Select a category...</option>
                                 {products.map(p => (
-                                    <option key={p._id} value={p._id}>{p.category}</option>
+                                    <option key={p._id} value={p._id}>{p.product_name}</option>
                                 ))}
                             </select>
                         </div>

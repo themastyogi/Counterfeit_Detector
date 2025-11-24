@@ -8,18 +8,25 @@ const ProductMaster = require('../models/ProductMaster');
 // Get all products for the tenant (or all products for system admins)
 router.get('/', verifyToken, async (req, res) => {
     try {
+        console.log('📦 GET /api/products - User:', req.user);
         let products;
         if (req.user.role === 'system_admin') {
             // System admins see all products
+            console.log('✅ System admin detected, fetching ALL products');
             products = await ProductMaster.find().sort({ createdAt: -1 });
+            console.log(`📊 Found ${products.length} products`);
         } else if (req.user.tenant_id) {
             // Tenant users see only their tenant's products
+            console.log(`🏢 Tenant user, fetching products for tenant: ${req.user.tenant_id}`);
             products = await ProductMaster.find({ tenant_id: req.user.tenant_id }).sort({ createdAt: -1 });
+            console.log(`📊 Found ${products.length} products`);
         } else {
+            console.log('❌ No role or tenant_id, denying access');
             return res.status(403).json({ message: 'Access denied' });
         }
         res.json(products);
     } catch (error) {
+        console.error('❌ Error fetching products:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });

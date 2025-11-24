@@ -77,16 +77,65 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
         await scanJob.save();
         console.log('✅ Scan job created:', scanJob._id);
 
-        // MOCK PROCESSING FOR NOW (To be replaced by actual Scan Engine)
-        // Simulate async processing
+        // Perform scan using Vision API with category validation
+        console.log('🔎 Analyzing image...');
+        const { analyzeImage } = require('../services/visionService');
+        const { validateCategory } = require('../services/categoryValidation');
+
         setTimeout(async () => {
             try {
                 console.log('⚙️ Processing scan job:', scanJob._id);
-                // Mock Result
-                const riskScore = Math.floor(Math.random() * 100);
+
+                // Get Vision API analysis
+                const visionResult = await analyzeImage(image_path);
+                console.log('📊 Vision analysis complete');
+
+                // Get product details for category
+                let productCategory = 'Other';
+                if (product_id) {
+                    const product = await ProductMaster.findById(product_id);
+                    if (product) {
+                        productCategory = product.product_name || product.category || 'Other';
+                    }
+                }
+
+                // Validate category match
+                const categoryValidation = validateCategory(productCategory, visionResult.labels);
+                console.log('🔍 Category validation:', categoryValidation.isMatch ? '✅ Match' : '❌ Mismatch');
+
+                // Calculate risk score based on category match and other factors
+                let riskScore = 0;
                 let status = 'LIKELY_GENUINE';
-                if (riskScore > 30) status = 'SUSPICIOUS';
-                if (riskScore > 70) status = 'HIGH_RISK';
+                const flags = {};
+
+                // Category mismatch is a major red flag
+                if (!categoryValidation.isMatch) {
+                    riskScore += 60;
+                    flags['Category Mismatch'] = categoryValidation.reason;
+                    status = 'SUSPICIOUS';
+                } else {
+                    // Lower risk if category matches
+                    riskScore += Math.max(0, (1 - categoryValidation.confidence) * 30);
+                    flags['Category Match'] = `Matched: ${categoryValidation.matchedLabels.join(', ')}`;
+                }
+
+                // Check safe search (spoof detection)
+                if (visionResult.safeSearch?.spoof === 'POSSIBLE' || visionResult.safeSearch?.spoof === 'LIKELY') {
+                    riskScore += 30;
+                    flags['Spoof Detection'] = 'Possible manipulation detected';
+                }
+
+                // Add detected labels to flags
+                flags['Detected Labels'] = visionResult.labels.slice(0, 5).map(l => l.description).join(', ');
+
+                // Determine final status
+                if (riskScore > 70) {
+                    status = 'HIGH_RISK';
+                } else if (riskScore > 40) {
+                    status = 'SUSPICIOUS';
+                } else {
+                    status = 'LIKELY_GENUINE';
+                }
 
                 const history = new ScanHistory({
                     tenant_id: scanJob.tenant_id,
@@ -95,9 +144,9 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                     scan_type: scanJob.scan_type,
                     image_path: scanJob.image_path,
                     status: status,
-                    risk_score: riskScore,
-                    flags_json: { "Mock Check": "Completed" },
-                    vision_used: scanJob.scan_type === 'AI_VISION'
+                    risk_score: Math.round(riskScore),
+                    flags_json: flags,
+                    vision_used: visionResult.dataSource === 'CLOUD_VISION_API'
                 });
                 await history.save();
 
@@ -111,12 +160,13 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                 console.log('✅ Scan processing completed');
 
             } catch (err) {
-                console.error("❌ Mock processing failed", err);
+                console.error("❌ Scan processing failed", err);
                 scanJob.status = 'FAILED';
                 scanJob.error_message = err.message;
                 await scanJob.save();
             }
         }, 2000); // 2 seconds delay
+
 
         console.log('📤 Sending response to client');
         res.status(201).json({ message: 'Scan submitted successfully', jobId: scanJob._id });

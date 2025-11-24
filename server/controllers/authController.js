@@ -1,0 +1,225 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const User = require('../models/User');
+
+// Initialize default system admin account
+const initializeAdmin = async () => {
+    try {
+        const adminEmail = 'admin@veriscan.com';
+        const adminExists = await User.findOne({ email: adminEmail });
+
+        if (!adminExists) {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash('Admin@123', salt);
+
+            const adminUser = new User({
+                fullName: 'System Administrator',
+                email: adminEmail,
+                password: hashedPassword,
+                role: 'system_admin',
+                status: 'ACTIVE'
+            });
+
+            await adminUser.save();
+            console.log('✅ Default system admin account created: admin@veriscan.com / Admin@123');
+        }
+    } catch (error) {
+        console.log('⚠️  Could not create admin account (database may not be connected)');
+    }
+};
+
+const register = async (req, res) => {
+    try {
+        const { fullName, email, password, tenant_id } = req.body;
+
+        // Check if user exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: 'User already exists' });
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Create user
+        const newUser = new User({
+            fullName,
+            email,
+            password: hashedPassword,
+            role: 'user', // Default role
+            tenant_id: tenant_id || null // Optional tenant association
+        });
+
+        await newUser.save();
+
+        // Create token
+        const token = jwt.sign({
+            id: newUser._id,
+            role: newUser.role,
+            tenant_id: newUser.tenant_id
+        }, process.env.JWT_SECRET, {
+            expiresIn: '1d'
+        });
+
+        res.status(201).json({
+            message: 'User registered successfully',
+            token,
+            user: {
+                id: newUser._id,
+                fullName: newUser.fullName,
+                email: newUser.email,
+                role: newUser.role,
+                tenant_id: newUser.tenant_id
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+const login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Check user
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid credentials' });
+        }
+
+        // Check password
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid credentials' });
+        }
+
+        // Force system_admin role for admin@veriscan.com
+        let userRole = user.role;
+        if (email === 'admin@veriscan.com') {
+            userRole = 'system_admin';
+            if (user.role !== 'system_admin') {
+                user.role = 'system_admin';
+                await user.save();
+            }
+        }
+
+        // Create token
+        const token = jwt.sign({
+            id: user._id,
+            role: userRole,
+            tenant_id: user.tenant_id
+        }, process.env.JWT_SECRET, {
+            expiresIn: '1d'
+        });
+
+        res.json({
+            message: 'Login successful',
+            token,
+            user: {
+                id: user._id,
+                fullName: user.fullName,
+                email: user.email,
+                role: userRole,
+                tenant_id: user.tenant_id
+            }
+        });
+    } catch (error) {
+        console.error('❌ Login error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+const updatePassword = async (req, res) => {
+    try {
+        const { email, currentPassword, newPassword } = req.body;
+
+        // Find user
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Verify current password
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update password
+        user.password = hashedPassword;
+        await user.save();
+
+        res.json({
+            message: 'Password updated successfully'
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Generate reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetTokenExpiry = Date.now() + 3600000; // 1 hour
+
+        user.resetToken = resetToken;
+        user.resetTokenExpiry = resetTokenExpiry;
+        await user.save();
+
+        // In production, send email with reset link
+        // For now, return the token (for testing)
+        res.json({
+            message: 'Password reset token generated',
+            resetToken, // Remove this in production
+            resetLink: `http://localhost:5173/reset-password?token=${resetToken}`
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+const resetPassword = async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+
+        const user = await User.findOne({
+            resetToken: token,
+            resetTokenExpiry: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired reset token' });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        user.password = hashedPassword;
+        user.resetToken = null;
+        user.resetTokenExpiry = null;
+        await user.save();
+
+        res.json({
+            message: 'Password reset successful'
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+module.exports = { register, login, updatePassword, forgotPassword, resetPassword, initializeAdmin };

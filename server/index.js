@@ -67,9 +67,12 @@ try {
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Basic Route
-app.get('/', (req, res) => {
-    res.send('Counterfeit Detector API is running');
-});
+// Basic Route (Dev only)
+if (process.env.NODE_ENV !== 'production') {
+    app.get('/', (req, res) => {
+        res.send('Counterfeit Detector API is running');
+    });
+}
 
 // Health Check
 app.get('/api/health', (req, res) => {

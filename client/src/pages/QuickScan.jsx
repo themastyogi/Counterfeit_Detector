@@ -135,10 +135,10 @@ const QuickScan = () => {
                 )}
 
                 <div className="space-y-6">
-                    {/* 1. Product Selection */}
+                    {/* 1. Category Selection */}
                     <div>
                         <label className="block text-sm font-medium text-text-main mb-2">
-                            1. Select Product / Test
+                            1. Select Category
                         </label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -149,9 +149,9 @@ const QuickScan = () => {
                                 value={selectedProduct}
                                 onChange={(e) => setSelectedProduct(e.target.value)}
                             >
-                                <option value="">Select a product...</option>
+                                <option value="">Select a category...</option>
                                 {products.map(p => (
-                                    <option key={p._id} value={p._id}>{p.product_name} ({p.sku})</option>
+                                    <option key={p._id} value={p._id}>{p.category}</option>
                                 ))}
                             </select>
                         </div>

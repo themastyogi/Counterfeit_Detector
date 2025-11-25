@@ -194,11 +194,93 @@ const Layout = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-surface border-t border-border py-8 mt-auto">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-text-muted text-sm">
-            &copy; {new Date().getFullYear()} VeriScan. All rights reserved.
-          </p>
+      <footer className="bg-surface border-t border-border py-12 mt-auto">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            {/* Company Info */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Shield className="h-6 w-6 text-accent" />
+                <span className="text-lg font-bold text-primary">VeriScan</span>
+              </div>
+              <p className="text-sm text-text-muted mb-4">
+                AI-powered counterfeit detection for protecting brands and consumers worldwide.
+              </p>
+            </div>
+
+            {/* Product */}
+            <div>
+              <h3 className="font-bold text-primary mb-4">Product</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link to="/about" className="text-sm text-text-muted hover:text-accent transition-colors">
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/dashboard" className="text-sm text-text-muted hover:text-accent transition-colors">
+                    Quick Scan
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/history" className="text-sm text-text-muted hover:text-accent transition-colors">
+                    Scan History
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Support */}
+            <div>
+              <h3 className="font-bold text-primary mb-4">Support</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link to="/contact" className="text-sm text-text-muted hover:text-accent transition-colors">
+                    Contact Us
+                  </Link>
+                </li>
+                <li>
+                  <a href="mailto:support@veriscan.com" className="text-sm text-text-muted hover:text-accent transition-colors">
+                    Email Support
+                  </a>
+                </li>
+                <li>
+                  <a href="tel:+911234567890" className="text-sm text-text-muted hover:text-accent transition-colors">
+                    Phone Support
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h3 className="font-bold text-primary mb-4">Legal</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link to="/privacy" className="text-sm text-text-muted hover:text-accent transition-colors">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/terms" className="text-sm text-text-muted hover:text-accent transition-colors">
+                    Terms of Service
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="pt-8 border-t border-border">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-text-muted text-sm">
+                &copy; {new Date().getFullYear()} VeriScan. All rights reserved.
+              </p>
+              <div className="flex items-center gap-4">
+                <span className="text-xs text-text-muted">Made with ❤️ in India</span>
+              </div>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

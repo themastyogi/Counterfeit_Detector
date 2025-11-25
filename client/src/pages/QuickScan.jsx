@@ -16,6 +16,7 @@ const QuickScan = () => {
     const [showCamera, setShowCamera] = useState(false);
     const [stream, setStream] = useState(null);
     const [error, setError] = useState('');
+    const [showSearchResults, setShowSearchResults] = useState(false);
 
     // Fetch product categories
     useEffect(() => {
@@ -42,6 +43,34 @@ const QuickScan = () => {
     const filteredProducts = products.filter(p =>
         p.product_name.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const handleSelectFromSearch = (product) => {
+        setSelectedProduct(product._id);
+        setSearchQuery(product.product_name);
+        setShowSearchResults(false);
+    };
+
+    const handleSearchChange = (e) => {
+        setSearchQuery(e.target.value);
+        setShowSearchResults(true);
+    };
+
+    const getSelectedProductName = () => {
+        const product = products.find(p => p._id === selectedProduct);
+        return product ? product.product_name : '';
+    };
+
+    // Close search results when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (!e.target.closest('.search-container')) {
+                setShowSearchResults(false);
+            }
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
+
 
     const handleImageChange = e => {
         const file = e.target.files[0];
@@ -151,23 +180,59 @@ const QuickScan = () => {
                         <span className="text-sm text-danger">{error}</span>
                     </div>
                 )}
-                {/* Category Search */}
-                <div className="mb-4">
+                {/* Category Search with Autocomplete */}
+                <div className="mb-4 search-container relative">
                     <label className="block text-sm font-medium text-text-main mb-1">Select Category</label>
-                    <input
-                        type="text"
-                        placeholder="Search categories..."
-                        className="input-field w-full pl-10 mb-2"
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                    />
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Search categories..."
+                            className="input-field w-full mb-2"
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            onFocus={() => setShowSearchResults(true)}
+                        />
+                        <Search className="absolute left-3 top-3 h-5 w-5 text-text-muted pointer-events-none" />
+
+                        {/* Search Results Dropdown */}
+                        {showSearchResults && searchQuery && filteredProducts.length > 0 && (
+                            <div className="absolute z-10 w-full bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto mt-1">
+                                {filteredProducts.map(p => (
+                                    <div
+                                        key={p._id}
+                                        className="px-4 py-2 hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
+                                        onClick={() => handleSelectFromSearch(p)}
+                                    >
+                                        <div className="font-medium text-text-main">{p.product_name}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* No Results Message */}
+                        {showSearchResults && searchQuery && filteredProducts.length === 0 && (
+                            <div className="absolute z-10 w-full bg-white border border-border rounded-lg shadow-lg mt-1 px-4 py-3">
+                                <p className="text-text-muted text-sm">No categories found</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Selected Category Display */}
                     <select
                         className="input-field w-full"
                         value={selectedProduct}
-                        onChange={e => setSelectedProduct(e.target.value)}
+                        onChange={e => {
+                            setSelectedProduct(e.target.value);
+                            const product = products.find(p => p._id === e.target.value);
+                            if (product) {
+                                setSearchQuery(product.product_name);
+                            } else {
+                                setSearchQuery('');
+                            }
+                        }}
                     >
                         <option value="">-- Choose Category --</option>
-                        {filteredProducts.map(p => (
+                        {products.map(p => (
                             <option key={p._id} value={p._id}>{p.product_name}</option>
                         ))}
                     </select>

@@ -25,37 +25,13 @@ const ScanResult = () => {
     const getStatusConfig = (status) => {
         switch (status) {
             case 'LIKELY_GENUINE':
-                return {
-                    color: 'text-success',
-                    bg: 'bg-emerald-50',
-                    border: 'border-emerald-200',
-                    icon: CheckCircle,
-                    label: 'Likely Genuine'
-                };
+                return { color: 'text-success', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: CheckCircle, label: 'Likely Genuine' };
             case 'SUSPICIOUS':
-                return {
-                    color: 'text-warning',
-                    bg: 'bg-amber-50',
-                    border: 'border-amber-200',
-                    icon: AlertTriangle,
-                    label: 'Suspicious'
-                };
+                return { color: 'text-warning', bg: 'bg-amber-50', border: 'border-amber-200', icon: AlertTriangle, label: 'Suspicious' };
             case 'HIGH_RISK':
-                return {
-                    color: 'text-danger',
-                    bg: 'bg-red-50',
-                    border: 'border-red-200',
-                    icon: XCircle,
-                    label: 'High Risk'
-                };
+                return { color: 'text-danger', bg: 'bg-red-50', border: 'border-red-200', icon: XCircle, label: 'High Risk' };
             default:
-                return {
-                    color: 'text-text-muted',
-                    bg: 'bg-gray-50',
-                    border: 'border-gray-200',
-                    icon: Shield,
-                    label: status
-                };
+                return { color: 'text-text-muted', bg: 'bg-gray-50', border: 'border-gray-200', icon: Shield, label: status };
         }
     };
 
@@ -64,10 +40,7 @@ const ScanResult = () => {
 
     return (
         <div className="max-w-3xl mx-auto">
-            <button
-                onClick={() => navigate('/quick-scan')}
-                className="flex items-center text-text-muted hover:text-primary mb-6 transition-colors"
-            >
+            <button onClick={() => navigate('/quick-scan')} className="flex items-center text-text-muted hover:text-primary mb-6 transition-colors">
                 <ArrowLeft size={20} className="mr-2" />
                 Back to Scanner
             </button>
@@ -78,11 +51,7 @@ const ScanResult = () => {
                     <div className={`inline-flex p-4 rounded-full bg-white shadow-sm mb-6 ${config.color}`}>
                         <StatusIcon size={64} />
                     </div>
-
-                    <h1 className={`text-3xl font-bold mb-2 ${config.color}`}>
-                        {config.label}
-                    </h1>
-
+                    <h1 className={`text-3xl font-bold mb-2 ${config.color}`}>{config.label}</h1>
                     <div className="flex items-center justify-center gap-2 text-text-muted">
                         <span>Risk Score:</span>
                         <span className="font-bold text-primary text-lg">{result.risk_score}/100</span>
@@ -126,22 +95,32 @@ const ScanResult = () => {
                                     </p>
                                 </div>
                             </div>
+
+                            {/* Failure Details */}
+                            {result.flags_json && Object.keys(result.flags_json).length > 0 && (
+                                <div>
+                                    <h3 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Failure Details</h3>
+                                    <div className="bg-background rounded-lg p-4 border border-border">
+                                        <ul className="list-disc list-inside space-y-1">
+                                            {Object.entries(result.flags_json).map(([key, value]) => (
+                                                <li key={key}>
+                                                    <span className="font-medium">{key}:</span> {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     {/* Actions */}
                     <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-border">
-                        <button
-                            className="flex-1 btn btn-primary flex items-center justify-center gap-2"
-                            onClick={() => navigate('/quick-scan')}
-                        >
+                        <button className="flex-1 btn btn-primary flex items-center justify-center gap-2" onClick={() => navigate('/quick-scan')}>
                             <RefreshCw size={18} />
                             Scan Another Item
                         </button>
-                        <button
-                            className="flex-1 btn btn-outline flex items-center justify-center gap-2"
-                            onClick={() => navigate('/history')}
-                        >
+                        <button className="flex-1 btn btn-outline flex items-center justify-center gap-2" onClick={() => navigate('/history')}>
                             <Shield size={18} />
                             View History
                         </button>

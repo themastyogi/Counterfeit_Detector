@@ -56,9 +56,14 @@ const ContactUs = () => {
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-primary mb-1">Email</h3>
-                                        <a href="mailto:support@veriscan.com" className="text-text-muted hover:text-accent transition-colors">
-                                            support@veriscan.com
-                                        </a>
+                                        <div className="space-y-1">
+                                            <a href="mailto:support@veriscan.com" className="block text-text-muted hover:text-accent transition-colors">
+                                                support@veriscan.com
+                                            </a>
+                                            <a href="mailto:themastyogi@gmail.com" className="block text-text-muted hover:text-accent transition-colors">
+                                                themastyogi@gmail.com
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -68,9 +73,14 @@ const ContactUs = () => {
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-primary mb-1">Phone</h3>
-                                        <a href="tel:+911234567890" className="text-text-muted hover:text-accent transition-colors">
-                                            +91 123 456 7890
-                                        </a>
+                                        <div className="space-y-1">
+                                            <a href="tel:+911234567890" className="block text-text-muted hover:text-accent transition-colors">
+                                                +91 123 456 7890
+                                            </a>
+                                            <a href="tel:+918285424190" className="block text-text-muted hover:text-accent transition-colors">
+                                                +91 828 542 4190
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
 

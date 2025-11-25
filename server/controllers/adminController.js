@@ -1,5 +1,5 @@
 const User = require('../models/User');
-const Analysis = require('../models/Analysis');
+const ScanHistory = require('../models/ScanHistory');
 
 // Get all users (admin only)
 const getAllUsers = async (req, res) => {
@@ -76,15 +76,15 @@ const getSystemStats = async (req, res) => {
         const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
         // Total scans
-        const totalScans = await Analysis.countDocuments();
+        const totalScans = await ScanHistory.countDocuments();
 
         // Current month scans
-        const currentMonthScans = await Analysis.countDocuments({
+        const currentMonthScans = await ScanHistory.countDocuments({
             createdAt: { $gte: startOfMonth }
         });
 
         // Last month scans
-        const lastMonthScans = await Analysis.countDocuments({
+        const lastMonthScans = await ScanHistory.countDocuments({
             createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth }
         });
 
@@ -93,18 +93,18 @@ const getSystemStats = async (req, res) => {
             ? Math.round(((currentMonthScans - lastMonthScans) / lastMonthScans) * 100)
             : 0;
 
-        // Counterfeits (suspicious/counterfeit detections)
-        const totalCounterfeits = await Analysis.countDocuments({
-            'analysis.status': { $in: ['suspicious', 'counterfeit', 'fake'] }
+        // Counterfeits (SUSPICIOUS and HIGH_RISK detections)
+        const totalCounterfeits = await ScanHistory.countDocuments({
+            status: { $in: ['SUSPICIOUS', 'HIGH_RISK'] }
         });
 
-        const currentMonthCounterfeits = await Analysis.countDocuments({
-            'analysis.status': { $in: ['suspicious', 'counterfeit', 'fake'] },
+        const currentMonthCounterfeits = await ScanHistory.countDocuments({
+            status: { $in: ['SUSPICIOUS', 'HIGH_RISK'] },
             createdAt: { $gte: startOfMonth }
         });
 
-        const lastMonthCounterfeits = await Analysis.countDocuments({
-            'analysis.status': { $in: ['suspicious', 'counterfeit', 'fake'] },
+        const lastMonthCounterfeits = await ScanHistory.countDocuments({
+            status: { $in: ['SUSPICIOUS', 'HIGH_RISK'] },
             createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth }
         });
 
@@ -113,15 +113,15 @@ const getSystemStats = async (req, res) => {
             : 0;
 
         // Active users (users who have performed scans this month)
-        const activeUserIds = await Analysis.distinct('userId', {
+        const activeUserIds = await ScanHistory.distinct('user_id', {
             createdAt: { $gte: startOfMonth }
         });
-        const activeUsers = activeUserIds.length;
+        const activeUsers = activeUserIds.filter(id => id != null).length;
 
-        const lastMonthActiveUserIds = await Analysis.distinct('userId', {
+        const lastMonthActiveUserIds = await ScanHistory.distinct('user_id', {
             createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth }
         });
-        const lastMonthActiveUsers = lastMonthActiveUserIds.length;
+        const lastMonthActiveUsers = lastMonthActiveUserIds.filter(id => id != null).length;
 
         const activeUserTrend = lastMonthActiveUsers > 0
             ? Math.round(((activeUsers - lastMonthActiveUsers) / lastMonthActiveUsers) * 100)
@@ -131,16 +131,16 @@ const getSystemStats = async (req, res) => {
         const totalUsers = await User.countDocuments();
 
         // System health check
-        const recentScans = await Analysis.countDocuments({
+        const recentScans = await ScanHistory.countDocuments({
             createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Last 24 hours
         });
         const systemStatus = recentScans > 0 ? 'Healthy' : 'Idle';
 
-        // Recent analyses for activity feed
-        const recentAnalyses = await Analysis.find()
+        // Recent scans for activity feed
+        const recentScanHistory = await ScanHistory.find()
             .sort({ createdAt: -1 })
             .limit(10)
-            .populate('userId', 'fullName email');
+            .populate('user_id', 'fullName email');
 
         const stats = {
             totalScans,
@@ -151,7 +151,7 @@ const getSystemStats = async (req, res) => {
             activeUserTrend: activeUserTrend > 0 ? `+${activeUserTrend}%` : `${activeUserTrend}%`,
             totalUsers,
             systemStatus,
-            recentAnalyses
+            recentScans: recentScanHistory
         };
 
         res.json({

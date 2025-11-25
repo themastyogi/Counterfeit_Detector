@@ -187,7 +187,7 @@ const QuickScan = () => {
                         <input
                             type="text"
                             placeholder="Search categories..."
-                            className="input-field w-full mb-2"
+                            className="input-field w-full mb-2 pl-10"
                             value={searchQuery}
                             onChange={handleSearchChange}
                             onFocus={() => setShowSearchResults(true)}

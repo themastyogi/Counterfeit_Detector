@@ -52,9 +52,15 @@ function detectBrandLogo(visionResult, category) {
     }
 
     if (logos.length === 0) {
-        // No logo detected, but one was expected
-        result.riskScore += 25;
-        result.flags['Logo Detection'] = `No brand logo detected (expected: ${expectedBrands.join(', ')})`;
+        // No logo detected, but one was expected - MAJOR RED FLAG
+        result.riskScore += 35; // Increased from 25
+        result.flags['Logo Missing'] = `No brand logo detected (expected: ${expectedBrands.join(', ')})`;
+
+        // Extra penalty for Apple products (iPhone, iPad, etc.)
+        if (expectedBrands.includes('Apple')) {
+            result.riskScore += 15;
+            result.flags['Apple Logo Missing'] = 'Apple logo not detected - critical authenticity marker';
+        }
         return result;
     }
 
@@ -72,22 +78,26 @@ function detectBrandLogo(visionResult, category) {
         const logoConfidence = logos.find(l => l.description === matchedBrand)?.score || 0;
 
         if (logoConfidence < 0.6) {
-            result.riskScore += 30;
-            result.flags['Logo Quality'] = `Low confidence logo detection (${(logoConfidence * 100).toFixed(0)}%)`;
+            result.riskScore += 40; // Increased from 30
+            result.flags['Logo Quality'] = `Low confidence logo detection (${(logoConfidence * 100).toFixed(0)}%) - possible fake`;
+        } else if (logoConfidence < 0.8) {
+            result.riskScore += 20;
+            result.flags['Logo Quality'] = `Moderate logo confidence (${(logoConfidence * 100).toFixed(0)}%)`;
         } else {
+            // High confidence logo - good sign, but doesn't reduce risk
             result.flags['Brand Verified'] = `${matchedBrand} logo detected (${(logoConfidence * 100).toFixed(0)}% confidence)`;
         }
         result.detected = true;
     } else {
-        // Wrong brand detected
-        result.riskScore += 40;
+        // Wrong brand detected - MAJOR RED FLAG
+        result.riskScore += 50; // Increased from 40
         result.flags['Brand Mismatch'] = `Unexpected brand: ${detectedBrands.join(', ')} (expected: ${expectedBrands.join(', ')})`;
     }
 
     // Check for multiple conflicting logos
     if (logos.length > 2) {
         result.riskScore += 35;
-        result.flags['Multiple Logos'] = `${logos.length} different logos detected - suspicious`;
+        result.flags['Multiple Logos'] = `${logos.length} different logos detected - highly suspicious`;
     }
 
     return result;

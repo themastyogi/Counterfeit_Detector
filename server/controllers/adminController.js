@@ -69,18 +69,89 @@ const deleteUser = async (req, res) => {
 // Get system statistics (admin only)
 const getSystemStats = async (req, res) => {
     try {
+        // Calculate date ranges
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+        // Total scans
+        const totalScans = await Analysis.countDocuments();
+
+        // Current month scans
+        const currentMonthScans = await Analysis.countDocuments({
+            createdAt: { $gte: startOfMonth }
+        });
+
+        // Last month scans
+        const lastMonthScans = await Analysis.countDocuments({
+            createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth }
+        });
+
+        // Calculate scan trend
+        const scanTrend = lastMonthScans > 0
+            ? Math.round(((currentMonthScans - lastMonthScans) / lastMonthScans) * 100)
+            : 0;
+
+        // Counterfeits (suspicious/counterfeit detections)
+        const totalCounterfeits = await Analysis.countDocuments({
+            'analysis.status': { $in: ['suspicious', 'counterfeit', 'fake'] }
+        });
+
+        const currentMonthCounterfeits = await Analysis.countDocuments({
+            'analysis.status': { $in: ['suspicious', 'counterfeit', 'fake'] },
+            createdAt: { $gte: startOfMonth }
+        });
+
+        const lastMonthCounterfeits = await Analysis.countDocuments({
+            'analysis.status': { $in: ['suspicious', 'counterfeit', 'fake'] },
+            createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth }
+        });
+
+        const counterfeitTrend = lastMonthCounterfeits > 0
+            ? Math.round(((currentMonthCounterfeits - lastMonthCounterfeits) / lastMonthCounterfeits) * 100)
+            : 0;
+
+        // Active users (users who have performed scans this month)
+        const activeUserIds = await Analysis.distinct('userId', {
+            createdAt: { $gte: startOfMonth }
+        });
+        const activeUsers = activeUserIds.length;
+
+        const lastMonthActiveUserIds = await Analysis.distinct('userId', {
+            createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth }
+        });
+        const lastMonthActiveUsers = lastMonthActiveUserIds.length;
+
+        const activeUserTrend = lastMonthActiveUsers > 0
+            ? Math.round(((activeUsers - lastMonthActiveUsers) / lastMonthActiveUsers) * 100)
+            : 0;
+
+        // Total users
         const totalUsers = await User.countDocuments();
-        const totalAnalyses = await Analysis.countDocuments();
+
+        // System health check
+        const recentScans = await Analysis.countDocuments({
+            createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Last 24 hours
+        });
+        const systemStatus = recentScans > 0 ? 'Healthy' : 'Idle';
+
+        // Recent analyses for activity feed
         const recentAnalyses = await Analysis.find()
             .sort({ createdAt: -1 })
             .limit(10)
             .populate('userId', 'fullName email');
 
         const stats = {
+            totalScans,
+            scanTrend: scanTrend > 0 ? `+${scanTrend}%` : `${scanTrend}%`,
+            totalCounterfeits,
+            counterfeitTrend: counterfeitTrend > 0 ? `+${counterfeitTrend}%` : `${counterfeitTrend}%`,
+            activeUsers,
+            activeUserTrend: activeUserTrend > 0 ? `+${activeUserTrend}%` : `${activeUserTrend}%`,
             totalUsers,
-            totalAnalyses,
-            recentAnalyses,
-            systemStatus: 'operational'
+            systemStatus,
+            recentAnalyses
         };
 
         res.json({

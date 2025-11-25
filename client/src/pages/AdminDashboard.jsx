@@ -17,16 +17,40 @@ const AdminDashboard = () => {
   const [formData, setFormData] = useState({});
   const [editMode, setEditMode] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [adminStats, setAdminStats] = useState({
+    totalScans: 0,
+    scanTrend: '+0%',
+    totalCounterfeits: 0,
+    counterfeitTrend: '+0%',
+    activeUsers: 0,
+    activeUserTrend: '+0%',
+    systemStatus: 'Loading...'
+  });
 
   useEffect(() => {
     if (isAdmin) {
       fetchTenants();
       fetchPlans();
       fetchUsers();
+      fetchAdminStats();
     } else if (isTenantAdmin) {
       fetchProducts();
     }
   }, [isAdmin, isTenantAdmin, token]);
+
+  const fetchAdminStats = async () => {
+    try {
+      const res = await fetch('/api/admin/stats', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAdminStats(data.stats);
+      }
+    } catch (err) {
+      console.error('Failed to fetch admin stats', err);
+    }
+  };
 
   const fetchTenants = async () => {
     try {
@@ -226,10 +250,37 @@ const AdminDashboard = () => {
 
   const renderOverview = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <StatCard title="Total Scans" value="1,234" icon={<BarChart2 size={24} />} trend="+12%" color="text-blue-500" bg="bg-blue-50" />
-      <StatCard title="Counterfeits" value="23" icon={<AlertTriangle size={24} />} trend="-5%" color="text-red-500" bg="bg-red-50" />
-      <StatCard title="Active Users" value="45" icon={<Users size={24} />} trend="+8%" color="text-emerald-500" bg="bg-emerald-50" />
-      <StatCard title="System Status" value="Healthy" icon={<Database size={24} />} color="text-purple-500" bg="bg-purple-50" />
+      <StatCard
+        title="Total Scans"
+        value={adminStats.totalScans.toLocaleString()}
+        icon={<BarChart2 size={24} />}
+        trend={adminStats.scanTrend}
+        color="text-blue-500"
+        bg="bg-blue-50"
+      />
+      <StatCard
+        title="Counterfeits"
+        value={adminStats.totalCounterfeits.toLocaleString()}
+        icon={<AlertTriangle size={24} />}
+        trend={adminStats.counterfeitTrend}
+        color="text-red-500"
+        bg="bg-red-50"
+      />
+      <StatCard
+        title="Active Users"
+        value={adminStats.activeUsers.toLocaleString()}
+        icon={<Users size={24} />}
+        trend={adminStats.activeUserTrend}
+        color="text-emerald-500"
+        bg="bg-emerald-50"
+      />
+      <StatCard
+        title="System Status"
+        value={adminStats.systemStatus}
+        icon={<Database size={24} />}
+        color="text-purple-500"
+        bg="bg-purple-50"
+      />
     </div>
   );
 

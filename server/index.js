@@ -10,16 +10,27 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// CORS Configuration - Restrict in production
+const corsOptions = {
+    origin: process.env.NODE_ENV === 'production'
+        ? process.env.ALLOWED_ORIGINS?.split(',') || ['https://yourdomain.com']
+        : '*',
+    credentials: true,
+    optionsSuccessStatus: 200
+};
 
-// Request logging
-app.use((req, res, next) => {
-    console.log(`📥 ${req.method} ${req.path}`);
-    next();
-});
+// Middleware
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' })); // Limit payload size
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Request logging (only in development)
+if (process.env.NODE_ENV !== 'production') {
+    app.use((req, res, next) => {
+        console.log(`📥 ${req.method} ${req.path}`);
+        next();
+    });
+}
 
 // Connect to MongoDB
 connectDB();
@@ -31,7 +42,6 @@ if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir);
 }
 
-// Routes - ORDER MATTERS!
 // Routes - ORDER MATTERS!
 const authRoutes = require('./routes/authRoutes');
 const analysisRoutes = require('./routes/analysisRoutes');
@@ -52,21 +62,22 @@ app.use('/api/users', userRoutes);
 app.use('/api/scan', scanRoutes);
 
 // Test management routes - Mounted at /api/tm to avoid conflict with adminRoutes middleware
-console.log('Loading test management routes...');
-try {
-    const testManagementRoutes = require('./routes/testManagementRoutes');
-    console.log('✅ Test management routes loaded successfully');
-    app.use('/api/tm', testManagementRoutes);
-    console.log('✅ Test management routes registered at /api/tm');
-} catch (error) {
-    console.error('❌ Error loading test management routes:', error.message);
-    console.error(error.stack);
+if (process.env.NODE_ENV !== 'production') {
+    console.log('Loading test management routes...');
+    try {
+        const testManagementRoutes = require('./routes/testManagementRoutes');
+        console.log('✅ Test management routes loaded successfully');
+        app.use('/api/tm', testManagementRoutes);
+        console.log('✅ Test management routes registered at /api/tm');
+    } catch (error) {
+        console.error('❌ Error loading test management routes:', error.message);
+    }
 }
 
-// Serve static files from uploads directory (for local testing)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve static files from uploads directory (PROTECTED - requires authentication)
+const { verifyToken } = require('./middleware/authMiddleware');
+app.use('/uploads', verifyToken, express.static(path.join(__dirname, 'uploads')));
 
-// Basic Route
 // Basic Route (Dev only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/', (req, res) => {
@@ -74,39 +85,15 @@ if (process.env.NODE_ENV !== 'production') {
     });
 }
 
-// Health Check
+// Health Check (Public)
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Clear all analysis records (for testing)
-app.delete('/api/clear-history', async (req, res) => {
-    try {
-        const Analysis = require('./models/Analysis');
-        await Analysis.deleteMany({});
-        res.json({ success: true, message: 'All analysis records cleared' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Failed to clear records', error: error.message });
-    }
-});
-
-// Force set admin role for admin@veriscan.com
-app.post('/api/force-admin', async (req, res) => {
-    try {
-        const User = require('./models/User');
-        const user = await User.findOne({ email: 'admin@veriscan.com' });
-
-        if (user) {
-            user.role = 'admin';
-            await user.save();
-            res.json({ success: true, message: 'Admin role set successfully', user: { email: user.email, role: user.role } });
-        } else {
-            res.json({ success: false, message: 'User not found in database' });
-        }
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Database error', error: error.message });
-    }
-});
+// REMOVED DANGEROUS ENDPOINTS:
+// - /api/clear-history (unprotected data deletion)
+// - /api/force-admin (unprotected admin escalation)
+// These should NEVER be accessible in production!
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {

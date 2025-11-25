@@ -90,6 +90,8 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                 // Get Vision API analysis
                 const visionResult = await analyzeImage(image_path);
                 console.log('📊 Vision analysis complete');
+                console.log('🔍 Data source:', visionResult.dataSource);
+                console.log('📝 Detected text:', visionResult.textDetection?.text || 'No text detected');
 
                 // Get product details for category
                 let productCategory = 'Other';
@@ -107,24 +109,25 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                 // Analyze authenticity (logo, text quality, patterns)
                 const authenticityResult = analyzeAuthenticity(visionResult, productCategory, categoryValidation);
                 console.log('🔐 Authenticity analysis:', authenticityResult.riskScore > 50 ? '⚠️ High risk' : '✅ Low risk');
+                console.log('🚩 Flags found:', Object.keys(authenticityResult.flags));
 
-                // Calculate risk score based on category match and other factors
-                let riskScore = 0;
+                // Calculate risk score based on authenticity factors
+                // Start with baseline risk (healthy skepticism)
+                let riskScore = 20; // Baseline: not automatically genuine
                 let status = 'LIKELY_GENUINE';
                 const flags = {};
 
-                // Category mismatch is a major red flag
+                // Category validation (informational only - match doesn't reduce risk)
                 if (!categoryValidation.isMatch) {
+                    // Category mismatch is a red flag
                     riskScore += 60;
                     flags['Category Mismatch'] = categoryValidation.reason;
-                    status = 'SUSPICIOUS';
                 } else {
-                    // Lower risk if category matches
-                    riskScore += Math.max(0, (1 - categoryValidation.confidence) * 30);
+                    // Category match is just informational, doesn't affect risk
                     flags['Category Match'] = `Matched: ${categoryValidation.matchedLabels.join(', ')}`;
                 }
 
-                // Add authenticity risk score and flags
+                // Add authenticity risk score and flags (THIS IS THE MAIN DETECTION)
                 riskScore += authenticityResult.riskScore;
                 Object.assign(flags, authenticityResult.flags);
 
@@ -134,7 +137,16 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                     flags['Spoof Detection'] = 'Possible manipulation detected';
                 }
 
-                // Add detected labels to flags
+                // Check if critical authenticity markers are missing
+                const hasLogoCheck = authenticityResult.flags['Brand Verified'] || authenticityResult.flags['Logo Detection'];
+                const hasTextCheck = authenticityResult.flags['Watermark Detected'] || authenticityResult.flags['Text Quality'];
+
+                if (!hasLogoCheck && !hasTextCheck) {
+                    riskScore += 15;
+                    flags['Limited Verification'] = 'Unable to verify key authenticity markers';
+                }
+
+                // Add detected labels to flags (informational)
                 flags['Detected Labels'] = visionResult.labels.slice(0, 5).map(l => l.description).join(', ');
 
                 // Determine final status (stricter thresholds)

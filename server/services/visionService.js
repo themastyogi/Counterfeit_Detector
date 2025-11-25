@@ -38,7 +38,7 @@ const getMockAnalysis = (filename) => {
         ],
         safeSearch: {
             adult: 'VERY_UNLIKELY',
-            spoof: random > 0.7 ? 'POSSIBLE' : 'VERY_UNLIKELY',
+            spoof: random > 0.5 ? 'POSSIBLE' : 'VERY_UNLIKELY', // 50% chance of detecting spoof
             medical: 'VERY_UNLIKELY',
             violence: 'VERY_UNLIKELY',
             racy: 'UNLIKELY'

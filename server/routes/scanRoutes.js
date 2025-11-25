@@ -137,10 +137,10 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                 // Add detected labels to flags
                 flags['Detected Labels'] = visionResult.labels.slice(0, 5).map(l => l.description).join(', ');
 
-                // Determine final status
-                if (riskScore > 70) {
+                // Determine final status (stricter thresholds)
+                if (riskScore > 60) {
                     status = 'HIGH_RISK';
-                } else if (riskScore > 40) {
+                } else if (riskScore > 30) {
                     status = 'SUSPICIOUS';
                 } else {
                     status = 'LIKELY_GENUINE';

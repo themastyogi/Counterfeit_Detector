@@ -111,6 +111,32 @@ function analyzeTextQuality(visionResult, category) {
         return result;
     }
 
+    // Check for watermarks (STRONG counterfeit indicator)
+    const watermarkPatterns = [
+        'funskyonline',
+        'stockphoto',
+        'shutterstock',
+        'gettyimages',
+        'dreamstime',
+        'istockphoto',
+        'alamy',
+        'depositphotos',
+        'watermark',
+        '.com/',
+        'www.',
+        'http://',
+        'https://'
+    ];
+
+    const textLower = detectedText.toLowerCase();
+    for (const watermark of watermarkPatterns) {
+        if (textLower.includes(watermark)) {
+            result.riskScore += 70;
+            result.flags['Watermark Detected'] = `Stock photo or website watermark found: "${watermark}" - STRONG counterfeit indicator`;
+            break;
+        }
+    }
+
     // Check OCR confidence (poor print quality indicator)
     if (confidence > 0 && confidence < 0.5) {
         result.riskScore += 30;
@@ -121,7 +147,6 @@ function analyzeTextQuality(visionResult, category) {
     }
 
     // Check for brand name misspellings
-    const textLower = detectedText.toLowerCase();
     for (const [correctBrand, misspellings] of Object.entries(commonMisspellings)) {
         for (const misspelling of misspellings) {
             if (textLower.includes(misspelling.toLowerCase())) {

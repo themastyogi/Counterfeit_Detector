@@ -1,6 +1,6 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
-const { verifyToken, requireRole } = require('../middleware/authMiddleware');
+const { verifyToken, isTenantAdmin, isSystemAdmin } = require('../middleware/authMiddleware');
 const ProductReference = require('../models/ProductReference');
 const { analyzeImage } = require('../services/visionService');
 const multer = require('multer');
@@ -41,7 +41,7 @@ router.post('/upload', verifyToken, isTenantAdmin, upload.single('image'), async
             return res.status(400).json({ message: 'Product ID is required' });
         }
 
-        console.log('📸 Processing reference image for product:', product_id);
+        console.log('ðŸ“¸ Processing reference image for product:', product_id);
 
         // Analyze the reference image to create fingerprint
         const visionResult = await analyzeImage(image_path);
@@ -72,7 +72,7 @@ router.post('/upload', verifyToken, isTenantAdmin, upload.single('image'), async
 
         await reference.save();
 
-        console.log('✅ Reference image saved:', reference._id);
+        console.log('âœ… Reference image saved:', reference._id);
 
         res.status(201).json({
             message: 'Reference image uploaded successfully',
@@ -84,7 +84,7 @@ router.post('/upload', verifyToken, isTenantAdmin, upload.single('image'), async
             }
         });
     } catch (error) {
-        console.error('❌ Reference upload error:', error);
+        console.error('âŒ Reference upload error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
@@ -102,7 +102,7 @@ router.get('/product/:productId', verifyToken, async (req, res) => {
 
         res.json(references);
     } catch (error) {
-        console.error('❌ Error fetching references:', error);
+        console.error('âŒ Error fetching references:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
@@ -124,7 +124,7 @@ router.get('/', verifyToken, isTenantAdmin, async (req, res) => {
 
         res.json(references);
     } catch (error) {
-        console.error('❌ Error fetching references:', error);
+        console.error('âŒ Error fetching references:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
@@ -147,7 +147,7 @@ router.delete('/:id', verifyToken, isTenantAdmin, async (req, res) => {
 
         res.json({ message: 'Reference deactivated successfully' });
     } catch (error) {
-        console.error('❌ Error deleting reference:', error);
+        console.error('âŒ Error deleting reference:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
@@ -164,7 +164,7 @@ router.post('/:id/regenerate', verifyToken, isSystemAdmin, async (req, res) => {
             return res.status(404).json({ message: 'Reference not found' });
         }
 
-        console.log('🔄 Regenerating fingerprint for reference:', reference._id);
+        console.log('ðŸ”„ Regenerating fingerprint for reference:', reference._id);
 
         // Re-analyze the image
         const visionResult = await analyzeImage(reference.reference_image_path);
@@ -182,14 +182,14 @@ router.post('/:id/regenerate', verifyToken, isSystemAdmin, async (req, res) => {
 
         await reference.save();
 
-        console.log('✅ Fingerprint regenerated');
+        console.log('âœ… Fingerprint regenerated');
 
         res.json({
             message: 'Fingerprint regenerated successfully',
             fingerprint: reference.fingerprint
         });
     } catch (error) {
-        console.error('❌ Error regenerating fingerprint:', error);
+        console.error('âŒ Error regenerating fingerprint:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });

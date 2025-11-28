@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, Camera, Search, AlertCircle, Loader, ScanLine, Mail, ArrowRight, KeyRound, Shield } from 'lucide-react';
+import { Upload, Camera, Search, AlertCircle, Loader, ScanLine, Mail, ArrowRight, KeyRound, Shield, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const QuickScan = () => {
     const navigate = useNavigate();
     const { token } = useAuth();
     const [products, setProducts] = useState([]);
+    const [references, setReferences] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedProduct, setSelectedProduct] = useState('');
+    const [selectedReference, setSelectedReference] = useState('');
+    const [referenceSearchQuery, setReferenceSearchQuery] = useState('');
+    const [showReferenceResults, setShowReferenceResults] = useState(false);
+
     const [scanMode, setScanMode] = useState('AUTO');
     const [image, setImage] = useState(null);
     const [preview, setPreview] = useState(null);
@@ -18,31 +23,45 @@ const QuickScan = () => {
     const [error, setError] = useState('');
     const [showSearchResults, setShowSearchResults] = useState(false);
 
-    // Fetch product categories
+    // Fetch product categories and references
     useEffect(() => {
-        const fetchProducts = async () => {
+        const fetchData = async () => {
             try {
-                const res = await fetch('/api/products', {
+                // Fetch Products (Categories)
+                const productsRes = await fetch('/api/products', {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                if (res.ok) {
-                    const data = await res.json();
+                if (productsRes.ok) {
+                    const data = await productsRes.json();
                     setProducts(data);
-                } else {
-                    console.error('Failed to fetch products');
-                    setProducts([]);
+                }
+
+                // Fetch References (Specific Products)
+                const referencesRes = await fetch('/api/references', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (referencesRes.ok) {
+                    const data = await referencesRes.json();
+                    // Filter only active references
+                    setReferences(data.filter(r => r.is_active));
                 }
             } catch (err) {
-                console.error('Error fetching products', err);
-                setProducts([]);
+                console.error('Error fetching data', err);
             }
         };
-        if (token) fetchProducts();
+        if (token) fetchData();
     }, [token]);
 
     const filteredProducts = products.filter(p =>
         p.product_name.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const filteredReferences = references.filter(r => {
+        const productName = r.product_id?.product_name || '';
+        const notes = r.notes || '';
+        const query = referenceSearchQuery.toLowerCase();
+        return productName.toLowerCase().includes(query) || notes.toLowerCase().includes(query);
+    });
 
     const handleSelectFromSearch = (product) => {
         setSelectedProduct(product._id);
@@ -50,14 +69,23 @@ const QuickScan = () => {
         setShowSearchResults(false);
     };
 
+    const handleSelectReference = (reference) => {
+        setSelectedReference(reference._id);
+        const name = reference.product_id?.product_name || 'Unknown Product';
+        const id = reference.notes ? ` - ${reference.notes}` : '';
+        setReferenceSearchQuery(`${name}${id}`);
+        setShowReferenceResults(false);
+
+        // Auto-select the category if possible
+        if (reference.product_id?._id) {
+            setSelectedProduct(reference.product_id._id);
+            setSearchQuery(reference.product_id.product_name);
+        }
+    };
+
     const handleSearchChange = (e) => {
         setSearchQuery(e.target.value);
         setShowSearchResults(true);
-    };
-
-    const getSelectedProductName = () => {
-        const product = products.find(p => p._id === selectedProduct);
-        return product ? product.product_name : '';
     };
 
     // Close search results when clicking outside
@@ -65,6 +93,9 @@ const QuickScan = () => {
         const handleClickOutside = (e) => {
             if (!e.target.closest('.search-container')) {
                 setShowSearchResults(false);
+            }
+            if (!e.target.closest('.reference-search-container')) {
+                setShowReferenceResults(false);
             }
         };
         document.addEventListener('click', handleClickOutside);
@@ -127,6 +158,12 @@ const QuickScan = () => {
         formData.append('image', image);
         formData.append('product_id', selectedProduct);
         formData.append('scan_type', scanMode);
+
+        // Add reference ID if selected
+        if (selectedReference) {
+            formData.append('reference_id', selectedReference);
+        }
+
         try {
             const res = await fetch('/api/scan/submit', {
                 method: 'POST',
@@ -180,6 +217,51 @@ const QuickScan = () => {
                         <span className="text-sm text-danger">{error}</span>
                     </div>
                 )}
+
+                {/* Reference Selection (Optional) */}
+                <div className="mb-4 reference-search-container relative">
+                    <label className="block text-sm font-medium text-text-main mb-1">
+                        Select Reference Product <span className="text-text-muted font-normal">(Optional)</span>
+                    </label>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Search specific product reference (e.g. Nike Air Jordan)..."
+                            className="input-field w-full mb-2 pl-10 border-blue-200 focus:border-blue-500"
+                            value={referenceSearchQuery}
+                            onChange={(e) => {
+                                setReferenceSearchQuery(e.target.value);
+                                setShowReferenceResults(true);
+                                if (e.target.value === '') setSelectedReference('');
+                            }}
+                            onFocus={() => setShowReferenceResults(true)}
+                        />
+                        <Search className="absolute left-3 top-3 h-5 w-5 text-blue-400 pointer-events-none" />
+
+                        {/* Reference Results Dropdown */}
+                        {showReferenceResults && referenceSearchQuery && filteredReferences.length > 0 && (
+                            <div className="absolute z-20 w-full bg-white border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto mt-1">
+                                {filteredReferences.map(r => (
+                                    <div
+                                        key={r._id}
+                                        className="px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0 flex items-center justify-between"
+                                        onClick={() => handleSelectReference(r)}
+                                    >
+                                        <div>
+                                            <div className="font-medium text-primary">{r.product_id?.product_name || 'Unknown Product'}</div>
+                                            {r.notes && <div className="text-xs text-text-muted mt-0.5">ID: {r.notes}</div>}
+                                        </div>
+                                        {selectedReference === r._id && <Check size={16} className="text-green-500" />}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <p className="text-xs text-text-muted mt-1">
+                        Select a specific reference to enable side-by-side comparison (Premium feature).
+                    </p>
+                </div>
+
                 {/* Category Search with Autocomplete */}
                 <div className="mb-4 search-container relative">
                     <label className="block text-sm font-medium text-text-main mb-1">Select Category</label>

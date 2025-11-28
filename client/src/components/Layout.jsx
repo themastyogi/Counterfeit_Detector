@@ -70,13 +70,13 @@ const Layout = () => {
 
                   {/* User Profile Dropdown Trigger (Simplified as direct info for now) */}
                   <div className="flex items-center gap-4 pl-6 border-l border-border">
-                    <div className="text-right hidden lg:block">
+                    <Link to="/profile" className="text-right hidden lg:block hover:opacity-80 transition-opacity">
                       <div className="text-sm font-semibold text-primary">{user?.fullName || 'User'}</div>
                       <div className={`text-xs flex items-center justify-end gap-1 ${plan.color}`}>
                         <PlanIcon size={12} />
                         {plan.label}
                       </div>
-                    </div>
+                    </Link>
                     <button
                       onClick={handleLogout}
                       className="p-2 rounded-full text-text-muted hover:text-danger hover:bg-red-50 transition-colors"
@@ -116,7 +116,7 @@ const Layout = () => {
             <div className="px-4 pt-2 pb-4 space-y-1">
               {isAuthenticated ? (
                 <>
-                  <div className="flex items-center gap-3 px-3 py-3 mb-2 bg-background rounded-lg">
+                  <Link to="/profile" className="flex items-center gap-3 px-3 py-3 mb-2 bg-background rounded-lg hover:bg-gray-50 transition-colors" onClick={() => setIsMenuOpen(false)}>
                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-white font-bold text-lg">
                       {user?.fullName?.charAt(0)}
                     </div>
@@ -127,7 +127,7 @@ const Layout = () => {
                         {plan.label}
                       </div>
                     </div>
-                  </div>
+                  </Link>
 
                   <Link
                     to="/dashboard"

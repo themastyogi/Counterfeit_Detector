@@ -1,10 +1,12 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CheckCircle, AlertTriangle, XCircle, ArrowLeft, RefreshCw, Share2, Download, Shield } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, ArrowLeft, RefreshCw, Share2, Download, Shield, Lock } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const ScanResult = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { hasFeature } = useAuth();
     const result = location.state?.result;
 
     if (!result) {
@@ -38,14 +40,18 @@ const ScanResult = () => {
     const config = getStatusConfig(result.status);
     const StatusIcon = config.icon;
 
+    // Check if reference comparison is available and allowed
+    const showComparison = result.reference_comparison && hasFeature('reference_comparison');
+    const referenceData = result.reference_comparison;
+
     return (
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto p-4">
             <button onClick={() => navigate('/quick-scan')} className="flex items-center text-text-muted hover:text-primary mb-6 transition-colors">
                 <ArrowLeft size={20} className="mr-2" />
                 Back to Scanner
             </button>
 
-            <div className="card overflow-hidden">
+            <div className="card overflow-hidden mb-8">
                 {/* Header Status */}
                 <div className={`text-center py-12 ${config.bg} border-b ${config.border}`}>
                     <div className={`inline-flex p-4 rounded-full bg-white shadow-sm mb-6 ${config.color}`}>
@@ -57,6 +63,76 @@ const ScanResult = () => {
                         <span className="font-bold text-primary text-lg">{result.risk_score}/100</span>
                     </div>
                 </div>
+
+                {/* Reference Comparison Section (Premium) */}
+                {showComparison && (
+                    <div className="border-b border-border p-6 bg-blue-50/30">
+                        <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+                            <Shield size={20} className="text-blue-600" />
+                            Reference Comparison Analysis
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* Scanned Image */}
+                            <div className="space-y-2">
+                                <div className="text-sm font-medium text-text-muted text-center">Scanned Image</div>
+                                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-border shadow-sm">
+                                    <img src={result.image_url || '/placeholder-image.jpg'} alt="Scanned" className="w-full h-full object-cover" />
+                                </div>
+                            </div>
+
+                            {/* Reference Image */}
+                            <div className="space-y-2">
+                                <div className="text-sm font-medium text-text-muted text-center">Reference: {referenceData.referenceName || 'Official Product'}</div>
+                                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-border shadow-sm relative">
+                                    {referenceData.referenceImage ? (
+                                        <img src={referenceData.referenceImage} alt="Reference" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full text-text-muted">Image not available</div>
+                                    )}
+                                    <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">
+                                        VERIFIED
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Similarity Metrics */}
+                        <div className="grid grid-cols-3 gap-4 mt-6">
+                            <div className="bg-white p-3 rounded-lg border border-border text-center">
+                                <div className="text-xs text-text-muted uppercase tracking-wider mb-1">Overall Match</div>
+                                <div className={`text-xl font-bold ${referenceData.similarity > 70 ? 'text-green-600' : 'text-amber-600'}`}>
+                                    {referenceData.similarity?.toFixed(0)}%
+                                </div>
+                            </div>
+                            <div className="bg-white p-3 rounded-lg border border-border text-center">
+                                <div className="text-xs text-text-muted uppercase tracking-wider mb-1">Confidence</div>
+                                <div className="text-xl font-bold text-primary">{referenceData.confidence}</div>
+                            </div>
+                            <div className="bg-white p-3 rounded-lg border border-border text-center">
+                                <div className="text-xs text-text-muted uppercase tracking-wider mb-1">Logo Match</div>
+                                <div className="text-xl font-bold text-primary">
+                                    {referenceData.details?.logoMatched ? 'Yes' : 'No'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Feature Upsell (If feature disabled but data exists) */}
+                {result.reference_comparison && !hasFeature('reference_comparison') && (
+                    <div className="p-6 bg-gray-50 border-b border-border flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="bg-gray-200 p-3 rounded-full">
+                                <Lock size={24} className="text-gray-500" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-gray-800">Premium Feature Locked</h4>
+                                <p className="text-sm text-gray-600">Upgrade to view detailed reference comparison and side-by-side analysis.</p>
+                            </div>
+                        </div>
+                        <button className="btn btn-primary text-sm">Upgrade Plan</button>
+                    </div>
+                )}
 
                 {/* Details Grid */}
                 <div className="p-8">

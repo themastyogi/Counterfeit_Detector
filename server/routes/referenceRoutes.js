@@ -28,7 +28,7 @@ if (!fs.existsSync(refDir)) {
  * Upload reference image for a product
  * POST /api/references/upload
  */
-router.post('/upload', verifyToken, requireRole(['system_admin', 'tenant_admin']), upload.single('image'), async (req, res) => {
+router.post('/upload', verifyToken, isTenantAdmin, upload.single('image'), async (req, res) => {
     try {
         const { product_id, notes } = req.body;
         const image_path = req.file ? req.file.path : null;
@@ -111,7 +111,7 @@ router.get('/product/:productId', verifyToken, async (req, res) => {
  * Get all reference images (admin only)
  * GET /api/references
  */
-router.get('/', verifyToken, requireRole(['system_admin', 'tenant_admin']), async (req, res) => {
+router.get('/', verifyToken, isTenantAdmin, async (req, res) => {
     try {
         const query = req.user.role === 'tenant_admin' && req.user.tenant_id
             ? { tenant_id: req.user.tenant_id }
@@ -133,7 +133,7 @@ router.get('/', verifyToken, requireRole(['system_admin', 'tenant_admin']), asyn
  * Delete a reference image
  * DELETE /api/references/:id
  */
-router.delete('/:id', verifyToken, requireRole(['system_admin', 'tenant_admin']), async (req, res) => {
+router.delete('/:id', verifyToken, isTenantAdmin, async (req, res) => {
     try {
         const reference = await ProductReference.findById(req.params.id);
 
@@ -156,7 +156,7 @@ router.delete('/:id', verifyToken, requireRole(['system_admin', 'tenant_admin'])
  * Regenerate fingerprint for a reference image
  * POST /api/references/:id/regenerate
  */
-router.post('/:id/regenerate', verifyToken, requireRole(['system_admin']), async (req, res) => {
+router.post('/:id/regenerate', verifyToken, isSystemAdmin, async (req, res) => {
     try {
         const reference = await ProductReference.findById(req.params.id);
 

@@ -48,6 +48,32 @@ const scanHistorySchema = new mongoose.Schema({
     },
     location: {
         type: String
+    },
+    // Training and verification fields
+    user_verified: {
+        type: Boolean,
+        default: false
+    },
+    user_override: {
+        type: String,
+        enum: ['GENUINE', 'FAKE', null],
+        default: null
+    },
+    verification_notes: {
+        type: String
+    },
+    verified_at: {
+        type: Date
+    },
+    verified_by: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    // Reference comparison data
+    reference_comparison: {
+        similarity: Number,
+        referenceId: mongoose.Schema.Types.ObjectId,
+        confidence: String
     }
 }, {
     timestamps: true

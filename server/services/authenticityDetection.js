@@ -1,6 +1,8 @@
 // Authenticity Detection Service
 // Analyzes logos, text quality, and patterns to detect counterfeit products
 
+const detectionProfiles = require('../config/detectionProfiles');
+
 // Brand-to-category mapping
 const brandMapping = {
     'Smartphones': ['Apple', 'Samsung', 'Google', 'OnePlus', 'Xiaomi', 'Huawei', 'Oppo', 'Vivo', 'Realme', 'Nokia'],
@@ -51,16 +53,31 @@ function detectBrandLogo(visionResult, category) {
         return result;
     }
 
+    // Detect dark colors for context-aware adjustments
+    const hasDarkColors = visionResult.imageProperties?.dominantColors?.some(c => {
+        const hex = c.color || '';
+        const brightness = parseInt(hex.slice(1, 3), 16) + parseInt(hex.slice(3, 5), 16) + parseInt(hex.slice(5, 7), 16);
+        return brightness < 150; // Dark if sum of RGB < 150
+    }) || false;
+
     if (logos.length === 0) {
-        // No logo detected, but one was expected - MAJOR RED FLAG
-        result.riskScore += 35; // Increased from 25
+        // No logo detected, but one was expected
+        // Use adaptive penalty based on brand
+        const brandThreshold = detectionProfiles.getLogoThreshold(expectedBrands[0]);
+        const basePenalty = brandThreshold.missingPenalty;
+
+        // Apply context-aware adjustments
+        const context = { hasDarkColors, noLogo: true };
+        const adjustment = detectionProfiles.getChallengeAdjustment(expectedBrands[0], context);
+
+        result.riskScore += basePenalty + adjustment;
         result.flags['Logo Missing'] = `No brand logo detected (expected: ${expectedBrands.join(', ')})`;
 
-        // Extra penalty for Apple products (iPhone, iPad, etc.)
-        if (expectedBrands.includes('Apple')) {
-            result.riskScore += 15;
-            result.flags['Apple Logo Missing'] = 'Apple logo not detected - critical authenticity marker';
+        // Add note if adjustment was applied
+        if (adjustment !== 0) {
+            result.flags['Detection Note'] = `Adjusted for known detection challenges (${adjustment > 0 ? '+' : ''}${adjustment})`;
         }
+
         return result;
     }
 
@@ -77,11 +94,15 @@ function detectBrandLogo(visionResult, category) {
         // Logo detected and matches expected brand
         const logoConfidence = logos.find(l => l.description === matchedBrand)?.score || 0;
 
-        if (logoConfidence < 0.6) {
-            result.riskScore += 40; // Increased from 30
-            result.flags['Logo Quality'] = `Low confidence logo detection (${(logoConfidence * 100).toFixed(0)}%) - possible fake`;
-        } else if (logoConfidence < 0.8) {
-            result.riskScore += 20;
+        // Get adaptive threshold for this brand
+        const brandThreshold = detectionProfiles.getLogoThreshold(matchedBrand);
+        const minConfidence = brandThreshold.minConfidence;
+
+        if (logoConfidence < minConfidence) {
+            result.riskScore += brandThreshold.lowConfidencePenalty;
+            result.flags['Logo Quality'] = `Low confidence logo detection (${(logoConfidence * 100).toFixed(0)}%, expected >${(minConfidence * 100).toFixed(0)}%) - possible fake`;
+        } else if (logoConfidence < 0.85) {
+            result.riskScore += 15;
             result.flags['Logo Quality'] = `Moderate logo confidence (${(logoConfidence * 100).toFixed(0)}%)`;
         } else {
             // High confidence logo - good sign, but doesn't reduce risk

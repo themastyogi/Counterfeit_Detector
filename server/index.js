@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
@@ -27,7 +27,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Request logging (only in development)
 if (process.env.NODE_ENV !== 'production') {
     app.use((req, res, next) => {
-        console.log(`📥 ${req.method} ${req.path}`);
+        console.log(`ðŸ“¥ ${req.method} ${req.path}`);
         next();
     });
 }
@@ -49,6 +49,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const tenantRoutes = require('./routes/tenantRoutes');
 const productRoutes = require('./routes/productRoutes');
 const scanRoutes = require('./routes/scanRoutes');
+const referenceRoutes = require('./routes/referenceRoutes');
 
 const { initializeAdmin } = require('./controllers/authController');
 
@@ -60,17 +61,18 @@ app.use('/api/tenants', tenantRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/scan', scanRoutes);
+app.use('/api/references', referenceRoutes);
 
 // Test management routes - Mounted at /api/tm to avoid conflict with adminRoutes middleware
 if (process.env.NODE_ENV !== 'production') {
     console.log('Loading test management routes...');
     try {
         const testManagementRoutes = require('./routes/testManagementRoutes');
-        console.log('✅ Test management routes loaded successfully');
+        console.log('âœ… Test management routes loaded successfully');
         app.use('/api/tm', testManagementRoutes);
-        console.log('✅ Test management routes registered at /api/tm');
+        console.log('âœ… Test management routes registered at /api/tm');
     } catch (error) {
-        console.error('❌ Error loading test management routes:', error.message);
+        console.error('âŒ Error loading test management routes:', error.message);
     }
 }
 

@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('../middleware/authMiddleware');
 const ScanJob = require('../models/ScanJob');
@@ -25,7 +25,7 @@ const upload = multer({ storage });
 // Submit a scan
 router.post('/submit', verifyToken, upload.single('image'), async (req, res) => {
     try {
-        console.log('🔍 Scan submit - Start');
+        console.log('ðŸ” Scan submit - Start');
         console.log('User:', req.user);
         console.log('Body:', req.body);
         console.log('File:', req.file);
@@ -34,25 +34,25 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
         const image_path = req.file ? req.file.path : null;
 
         if (!image_path) {
-            console.log('❌ No image provided');
+            console.log('âŒ No image provided');
             return res.status(400).json({ message: 'Image is required' });
         }
 
         // System admins don't need a tenant_id
         if (!req.user.tenant_id && req.user.role !== 'system_admin') {
-            console.log('❌ User has no tenant_id');
+            console.log('âŒ User has no tenant_id');
             return res.status(400).json({ message: 'User must belong to a tenant to perform scans' });
         }
 
         // Check Quota (skip for system admins)
         if (req.user.tenant_id) {
-            console.log('⏳ Checking quota...');
+            console.log('â³ Checking quota...');
             const quotaCheck = await checkQuota(req.user.tenant_id, scan_type);
             if (!quotaCheck.allowed) {
-                console.log('❌ Quota exceeded');
+                console.log('âŒ Quota exceeded');
                 return res.status(403).json({ message: quotaCheck.message });
             }
-            console.log('✅ Quota check passed');
+            console.log('âœ… Quota check passed');
         }
 
         // Validate product_id - if it's not a valid ObjectId, set to null
@@ -60,11 +60,11 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
         if (product_id && product_id.match(/^[0-9a-fA-F]{24}$/)) {
             validProductId = product_id;
         } else if (product_id) {
-            console.log('⚠️ Invalid product_id format, using null');
+            console.log('âš ï¸ Invalid product_id format, using null');
         }
 
         // Create Scan Job
-        console.log('💾 Creating scan job...');
+        console.log('ðŸ’¾ Creating scan job...');
         const scanJob = new ScanJob({
             tenant_id: req.user.tenant_id || null,
             user_id: req.user.id,
@@ -75,23 +75,27 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
         });
 
         await scanJob.save();
-        console.log('✅ Scan job created:', scanJob._id);
+        console.log('âœ… Scan job created:', scanJob._id);
 
         // Perform scan using Vision API with category validation
-        console.log('🔎 Analyzing image...');
+        console.log('ðŸ”Ž Analyzing image...');
         const { analyzeImage } = require('../services/visionService');
         const { validateCategory } = require('../services/categoryValidation');
         const { analyzeAuthenticity } = require('../services/authenticityDetection');
+        const { compareWithMultipleReferences, adjustRiskScoreWithReference } = require('../services/referenceComparison');
+        const { getTrainingData, calculateTrainingAdjustment } = require('../services/trainingService');
+        const detectionProfiles = require('../config/detectionProfiles');
+        const ProductReference = require('../models/ProductReference');
 
         setTimeout(async () => {
             try {
-                console.log('⚙️ Processing scan job:', scanJob._id);
+                console.log('âš™ï¸ Processing scan job:', scanJob._id);
 
                 // Get Vision API analysis
                 const visionResult = await analyzeImage(image_path);
-                console.log('📊 Vision analysis complete');
-                console.log('🔍 Data source:', visionResult.dataSource);
-                console.log('📝 Detected text:', visionResult.textDetection?.text || 'No text detected');
+                console.log('ðŸ“Š Vision analysis complete');
+                console.log('ðŸ” Data source:', visionResult.dataSource);
+                console.log('ðŸ“ Detected text:', visionResult.textDetection?.text || 'No text detected');
 
                 // Get product details for category
                 let productCategory = 'Other';
@@ -104,18 +108,20 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
 
                 // Validate category match
                 const categoryValidation = validateCategory(productCategory, visionResult.labels);
-                console.log('🔍 Category validation:', categoryValidation.isMatch ? '✅ Match' : '❌ Mismatch');
+                console.log('ðŸ” Category validation:', categoryValidation.isMatch ? 'âœ… Match' : 'âŒ Mismatch');
 
                 // Analyze authenticity (logo, text quality, patterns)
                 const authenticityResult = analyzeAuthenticity(visionResult, productCategory, categoryValidation);
-                console.log('🔐 Authenticity analysis:', authenticityResult.riskScore > 50 ? '⚠️ High risk' : '✅ Low risk');
-                console.log('🚩 Flags found:', Object.keys(authenticityResult.flags));
+                console.log('ðŸ” Authenticity analysis:', authenticityResult.riskScore > 50 ? 'âš ï¸ High risk' : 'âœ… Low risk');
+                console.log('ðŸš© Flags found:', Object.keys(authenticityResult.flags));
 
-                // Calculate risk score based on authenticity factors
-                // Start with baseline risk (healthy skepticism)
-                let riskScore = 20; // Baseline: not automatically genuine
+                // Calculate risk score with ADAPTIVE BASELINE
+                const baselineRisk = detectionProfiles.getBaselineRisk(productCategory);
+                let riskScore = baselineRisk;
                 let status = 'LIKELY_GENUINE';
                 const flags = {};
+
+                console.log(`ðŸ“Š Using adaptive baseline: ${baselineRisk} for category: ${productCategory}`);
 
                 // Category validation (informational only - match doesn't reduce risk)
                 if (!categoryValidation.isMatch) {
@@ -149,6 +155,40 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                 // Add detected labels to flags (informational)
                 flags['Detected Labels'] = visionResult.labels.slice(0, 5).map(l => l.description).join(', ');
 
+                // === REFERENCE COMPARISON (if available) ===
+                let referenceComparison = null;
+                if (product_id) {
+                    const references = await ProductReference.find({ product_id, is_active: true });
+                    if (references.length > 0) {
+                        console.log(`ðŸ” Found ${references.length} reference image(s) for comparison`);
+                        referenceComparison = compareWithMultipleReferences(visionResult, references);
+
+                        const adjustment = adjustRiskScoreWithReference(riskScore, referenceComparison);
+                        riskScore = adjustment.adjustedScore;
+                        flags['Reference Comparison'] = adjustment.reason;
+
+                        console.log(`ðŸ“Š Reference adjustment: ${adjustment.adjustment} (${adjustment.reason})`);
+                    }
+                }
+
+                // === TRAINING DATA ADJUSTMENT (if available) ===
+                if (product_id) {
+                    try {
+                        const trainingData = await getTrainingData(scanJob.tenant_id, product_id);
+                        if (trainingData.length >= 5) {
+                            const trainingAdj = calculateTrainingAdjustment(riskScore, product_id, trainingData);
+                            riskScore += trainingAdj.adjustment;
+                            flags['Training Insight'] = trainingAdj.reason;
+                            console.log(`ðŸŽ“ Training adjustment: ${trainingAdj.adjustment} (${trainingAdj.reason})`);
+                        }
+                    } catch (err) {
+                        console.log('âš ï¸ Training data not available:', err.message);
+                    }
+                }
+
+                // Ensure risk score stays within bounds
+                riskScore = Math.max(0, Math.min(100, Math.round(riskScore)));
+
                 // Determine final status (stricter thresholds)
                 if (riskScore > 60) {
                     status = 'HIGH_RISK';
@@ -165,9 +205,14 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                     scan_type: scanJob.scan_type,
                     image_path: scanJob.image_path,
                     status: status,
-                    risk_score: Math.round(riskScore),
+                    risk_score: riskScore,
                     flags_json: flags,
-                    vision_used: visionResult.dataSource === 'CLOUD_VISION_API'
+                    vision_used: visionResult.dataSource === 'CLOUD_VISION_API',
+                    reference_comparison: referenceComparison ? {
+                        similarity: referenceComparison.overallSimilarity,
+                        referenceId: referenceComparison.referenceId,
+                        confidence: referenceComparison.confidence
+                    } : undefined
                 });
                 await history.save();
 
@@ -178,10 +223,10 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                 if (scanJob.tenant_id) {
                     await incrementUsage(scanJob.tenant_id, scanJob.scan_type);
                 }
-                console.log('✅ Scan processing completed');
+                console.log('âœ… Scan processing completed');
 
             } catch (err) {
-                console.error("❌ Scan processing failed", err);
+                console.error("âŒ Scan processing failed", err);
                 scanJob.status = 'FAILED';
                 scanJob.error_message = err.message;
                 await scanJob.save();
@@ -189,10 +234,10 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
         }, 2000); // 2 seconds delay
 
 
-        console.log('📤 Sending response to client');
+        console.log('ðŸ“¤ Sending response to client');
         res.status(201).json({ message: 'Scan submitted successfully', jobId: scanJob._id });
     } catch (error) {
-        console.error('❌ Scan submit error:', error);
+        console.error('âŒ Scan submit error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
@@ -230,6 +275,48 @@ router.get('/history', verifyToken, async (req, res) => {
             .populate('user_id', 'fullName');
         res.json(history);
     } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+
+// === TRAINING VERIFICATION ENDPOINTS ===
+
+/**
+ * Verify a scan result (user confirms or overrides)
+ * POST /api/scan/verify/:id
+ */
+router.post('/verify/:id', verifyToken, async (req, res) => {
+    try {
+        const { override, notes } = req.body; // override: 'GENUINE' or 'FAKE'
+        const { verifyScan } = require('../services/trainingService');
+
+        const result = await verifyScan(req.params.id, req.user.id, override, notes);
+
+        res.json(result);
+    } catch (error) {
+        console.error('❌ Verification error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+/**
+ * Get training statistics
+ * GET /api/scan/training-stats
+ */
+router.get('/training-stats', verifyToken, async (req, res) => {
+    try {
+        const { getTrainingStats } = require('../services/trainingService');
+        
+        // Only admins and managers can see tenant-wide stats
+        const canViewTenantStats = ['system_admin', 'tenant_admin', 'manager'].includes(req.user.role);
+        const tenantId = canViewTenantStats ? req.user.tenant_id : null;
+        
+        const stats = await getTrainingStats(tenantId);
+
+        res.json(stats);
+    } catch (error) {
+        console.error('❌ Training stats error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });

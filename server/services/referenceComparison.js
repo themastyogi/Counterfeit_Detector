@@ -1,0 +1,272 @@
+// Reference Comparison Service
+// Compares scanned images against reference images of genuine products
+
+/**
+ * Calculate color similarity between two color arrays
+ */
+function calculateColorSimilarity(colors1, colors2) {
+    if (!colors1 || !colors2 || colors1.length === 0 || colors2.length === 0) {
+        return 0;
+    }
+
+    // Compare dominant colors
+    let totalSimilarity = 0;
+    let comparisons = 0;
+
+    for (const color1 of colors1.slice(0, 3)) { // Top 3 colors
+        for (const color2 of colors2.slice(0, 3)) {
+            const similarity = compareColors(color1.color, color2.color);
+            totalSimilarity += similarity * Math.min(color1.pixelFraction, color2.pixelFraction);
+            comparisons++;
+        }
+    }
+
+    return comparisons > 0 ? (totalSimilarity / comparisons) * 100 : 0;
+}
+
+/**
+ * Compare two hex colors and return similarity (0-1)
+ */
+function compareColors(hex1, hex2) {
+    if (!hex1 || !hex2) return 0;
+
+    // Convert hex to RGB
+    const rgb1 = hexToRgb(hex1);
+    const rgb2 = hexToRgb(hex2);
+
+    if (!rgb1 || !rgb2) return 0;
+
+    // Calculate Euclidean distance in RGB space
+    const distance = Math.sqrt(
+        Math.pow(rgb1.r - rgb2.r, 2) +
+        Math.pow(rgb1.g - rgb2.g, 2) +
+        Math.pow(rgb1.b - rgb2.b, 2)
+    );
+
+    // Normalize to 0-1 (max distance in RGB is ~441)
+    return 1 - (distance / 441);
+}
+
+/**
+ * Convert hex color to RGB
+ */
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+/**
+ * Calculate logo similarity
+ */
+function calculateLogoSimilarity(scannedLogos, referenceLogos) {
+    if (!scannedLogos || !referenceLogos || scannedLogos.length === 0 || referenceLogos.length === 0) {
+        return { similarity: 0, matched: false };
+    }
+
+    // Check if same logos are detected
+    const scannedBrands = scannedLogos.map(l => l.description.toLowerCase());
+    const referenceBrands = referenceLogos.map(l => l.description.toLowerCase());
+
+    const matchedBrands = scannedBrands.filter(brand =>
+        referenceBrands.some(refBrand =>
+            brand.includes(refBrand) || refBrand.includes(brand)
+        )
+    );
+
+    if (matchedBrands.length === 0) {
+        return { similarity: 0, matched: false };
+    }
+
+    // Calculate average confidence similarity
+    let totalSimilarity = 0;
+    let matches = 0;
+
+    for (const scannedLogo of scannedLogos) {
+        const matchingRef = referenceLogos.find(refLogo =>
+            scannedLogo.description.toLowerCase().includes(refLogo.description.toLowerCase()) ||
+            refLogo.description.toLowerCase().includes(scannedLogo.description.toLowerCase())
+        );
+
+        if (matchingRef) {
+            // Compare confidence scores
+            const confidenceDiff = Math.abs(scannedLogo.score - matchingRef.score);
+            totalSimilarity += (1 - confidenceDiff) * 100;
+            matches++;
+        }
+    }
+
+    return {
+        similarity: matches > 0 ? totalSimilarity / matches : 0,
+        matched: true,
+        matchedBrands
+    };
+}
+
+/**
+ * Calculate text similarity
+ */
+function calculateTextSimilarity(scannedText, referenceText) {
+    if (!scannedText || !referenceText) {
+        return 0;
+    }
+
+    const text1 = scannedText.text?.toLowerCase() || '';
+    const text2 = referenceText.text?.toLowerCase() || '';
+
+    if (!text1 || !text2) return 0;
+
+    // Simple word overlap similarity
+    const words1 = text1.split(/\s+/);
+    const words2 = text2.split(/\s+/);
+
+    const commonWords = words1.filter(word => words2.includes(word));
+    const similarity = (commonWords.length / Math.max(words1.length, words2.length)) * 100;
+
+    return similarity;
+}
+
+/**
+ * Main comparison function
+ */
+function compareWithReference(visionResult, referenceFingerprint) {
+    const result = {
+        overallSimilarity: 0,
+        colorSimilarity: 0,
+        logoSimilarity: 0,
+        textSimilarity: 0,
+        isMatch: false,
+        confidence: 'LOW',
+        details: {}
+    };
+
+    // Compare colors
+    const colorSim = calculateColorSimilarity(
+        visionResult.imageProperties?.dominantColors || [],
+        referenceFingerprint.dominantColors || []
+    );
+    result.colorSimilarity = colorSim;
+
+    // Compare logos
+    const logoComparison = calculateLogoSimilarity(
+        visionResult.logos || [],
+        referenceFingerprint.logos || []
+    );
+    result.logoSimilarity = logoComparison.similarity;
+    result.details.logoMatched = logoComparison.matched;
+    result.details.matchedBrands = logoComparison.matchedBrands;
+
+    // Compare text
+    const textSim = calculateTextSimilarity(
+        visionResult.textDetection || {},
+        referenceFingerprint.textPatterns || {}
+    );
+    result.textSimilarity = textSim;
+
+    // Calculate overall similarity (weighted average)
+    // Logo is most important (50%), color (30%), text (20%)
+    result.overallSimilarity =
+        (result.logoSimilarity * 0.5) +
+        (result.colorSimilarity * 0.3) +
+        (result.textSimilarity * 0.2);
+
+    // Determine if it's a match
+    if (result.overallSimilarity >= 75) {
+        result.isMatch = true;
+        result.confidence = 'HIGH';
+    } else if (result.overallSimilarity >= 60) {
+        result.isMatch = true;
+        result.confidence = 'MEDIUM';
+    } else if (result.overallSimilarity >= 45) {
+        result.isMatch = false;
+        result.confidence = 'MEDIUM';
+    } else {
+        result.isMatch = false;
+        result.confidence = 'LOW';
+    }
+
+    return result;
+}
+
+/**
+ * Compare against multiple references and return best match
+ */
+function compareWithMultipleReferences(visionResult, references) {
+    if (!references || references.length === 0) {
+        return null;
+    }
+
+    let bestMatch = null;
+    let highestSimilarity = 0;
+
+    for (const reference of references) {
+        const comparison = compareWithReference(visionResult, reference.fingerprint);
+
+        if (comparison.overallSimilarity > highestSimilarity) {
+            highestSimilarity = comparison.overallSimilarity;
+            bestMatch = {
+                ...comparison,
+                referenceId: reference._id,
+                referencePath: reference.reference_image_path
+            };
+        }
+    }
+
+    return bestMatch;
+}
+
+/**
+ * Adjust risk score based on reference comparison
+ */
+function adjustRiskScoreWithReference(baseRiskScore, comparisonResult) {
+    if (!comparisonResult) {
+        // No reference available, add uncertainty penalty
+        return {
+            adjustedScore: baseRiskScore + 10,
+            adjustment: 10,
+            reason: 'No reference image available for comparison'
+        };
+    }
+
+    let adjustment = 0;
+    let reason = '';
+
+    if (comparisonResult.isMatch) {
+        // Good match with reference - reduce risk significantly
+        if (comparisonResult.confidence === 'HIGH') {
+            adjustment = -30;
+            reason = `High similarity (${comparisonResult.overallSimilarity.toFixed(0)}%) to genuine reference`;
+        } else {
+            adjustment = -15;
+            reason = `Medium similarity (${comparisonResult.overallSimilarity.toFixed(0)}%) to genuine reference`;
+        }
+    } else {
+        // Poor match with reference - increase risk
+        if (comparisonResult.confidence === 'LOW') {
+            adjustment = 40;
+            reason = `Low similarity (${comparisonResult.overallSimilarity.toFixed(0)}%) to genuine reference - likely counterfeit`;
+        } else {
+            adjustment = 25;
+            reason = `Below-average similarity (${comparisonResult.overallSimilarity.toFixed(0)}%) to genuine reference`;
+        }
+    }
+
+    return {
+        adjustedScore: Math.max(0, Math.min(100, baseRiskScore + adjustment)),
+        adjustment,
+        reason,
+        details: comparisonResult
+    };
+}
+
+module.exports = {
+    compareWithReference,
+    compareWithMultipleReferences,
+    adjustRiskScoreWithReference,
+    calculateColorSimilarity,
+    calculateLogoSimilarity,
+    calculateTextSimilarity
+};

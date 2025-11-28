@@ -1,0 +1,42 @@
+﻿// === TRAINING VERIFICATION ENDPOINTS ===
+
+/**
+ * Verify a scan result (user confirms or overrides)
+ * POST /api/scan/verify/:id
+ */
+router.post('/verify/:id', verifyToken, async (req, res) => {
+    try {
+        const { override, notes } = req.body; // override: 'GENUINE' or 'FAKE'
+        const { verifyScan } = require('../services/trainingService');
+
+        const result = await verifyScan(req.params.id, req.user.id, override, notes);
+
+        res.json(result);
+    } catch (error) {
+        console.error('❌ Verification error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+/**
+ * Get training statistics
+ * GET /api/scan/training-stats
+ */
+router.get('/training-stats', verifyToken, async (req, res) => {
+    try {
+        const { getTrainingStats } = require('../services/trainingService');
+        
+        // Only admins and managers can see tenant-wide stats
+        const canViewTenantStats = ['system_admin', 'tenant_admin', 'manager'].includes(req.user.role);
+        const tenantId = canViewTenantStats ? req.user.tenant_id : null;
+        
+        const stats = await getTrainingStats(tenantId);
+
+        res.json(stats);
+    } catch (error) {
+        console.error('❌ Training stats error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+module.exports = router;

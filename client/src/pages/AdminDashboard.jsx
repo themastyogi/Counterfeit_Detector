@@ -1,12 +1,12 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
-  Users, Package, Settings, Image, Plus, Trash2, Edit, BarChart2, AlertTriangle, Database, LayoutGrid, CheckCircle
+  Users, Package, Settings, Image, Plus, Trash2, Edit, BarChart2, AlertTriangle, Database, LayoutGrid, CheckCircle, Lock
 } from 'lucide-react';
 import { TenantModal, ProductModal, UserModal } from '../components/AdminModals';
 
 const AdminDashboard = () => {
-  const { token, isAdmin, isTenantAdmin } = useAuth();
+  const { token, isAdmin, isTenantAdmin, hasFeature } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [tenants, setTenants] = useState([]);
   const [users, setUsers] = useState([]);
@@ -248,6 +248,14 @@ const AdminDashboard = () => {
     setShowModal(true);
   };
 
+  const handleReferenceClick = () => {
+    if (hasFeature('reference_comparison')) {
+      window.location.href = '/references';
+    } else {
+      alert('Your plan does not allow this feature. Please upgrade to access Reference Management.');
+    }
+  };
+
   const renderOverview = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <StatCard
@@ -401,6 +409,14 @@ const AdminDashboard = () => {
                 <CheckCircle size={16} className="text-green-500" />
                 {plan.high_quota_per_month === -1 ? 'Unlimited' : plan.high_quota_per_month} AI Scans
               </li>
+              <li className="flex items-center gap-2 text-sm text-text-muted">
+                {plan.features?.reference_comparison ? (
+                  <CheckCircle size={16} className="text-green-500" />
+                ) : (
+                  <Lock size={16} className="text-gray-400" />
+                )}
+                Reference Comparison
+              </li>
             </ul>
           </div>
         ))}
@@ -452,13 +468,21 @@ const AdminDashboard = () => {
                   <SidebarItem icon={<Users size={20} />} label="Tenants" active={activeTab === 'tenants'} onClick={() => setActiveTab('tenants')} />
                   <SidebarItem icon={<Settings size={20} />} label="Plans" active={activeTab === 'plans'} onClick={() => setActiveTab('plans')} />
                   <SidebarItem icon={<Users size={20} />} label="Users" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
-                  <SidebarItem icon={<Image size={20} />} label="References" onClick={() => window.location.href = '/references'} />
+                  <SidebarItem
+                    icon={hasFeature('reference_comparison') ? <Image size={20} /> : <Lock size={20} />}
+                    label="References"
+                    onClick={handleReferenceClick}
+                  />
                 </>
               )}
               {isTenantAdmin && (
                 <>
                   <SidebarItem icon={<Package size={20} />} label="Products" active={activeTab === 'products'} onClick={() => setActiveTab('products')} />
-                  <SidebarItem icon={<Image size={20} />} label="References" onClick={() => window.location.href = '/references'} />
+                  <SidebarItem
+                    icon={hasFeature('reference_comparison') ? <Image size={20} /> : <Lock size={20} />}
+                    label="References"
+                    onClick={handleReferenceClick}
+                  />
                 </>
               )}
             </div>

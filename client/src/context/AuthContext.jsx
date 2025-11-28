@@ -38,6 +38,13 @@ export const AuthProvider = ({ children }) => {
     const isManager = user?.role === 'manager';
     const hasTenant = !!user?.tenant_id;
 
+    const hasFeature = (featureName) => {
+        // System admins have all features
+        if (isAdmin) return true;
+        // Check user features
+        return user?.features?.[featureName] === true;
+    };
+
     const value = {
         user,
         token,
@@ -48,7 +55,8 @@ export const AuthProvider = ({ children }) => {
         isAdmin,
         isTenantAdmin,
         isManager,
-        hasTenant
+        hasTenant,
+        hasFeature
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -24,6 +24,12 @@ const planSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    features: {
+        reference_comparison: {
+            type: Boolean,
+            default: false
+        }
+    },
     is_active: {
         type: Boolean,
         default: true

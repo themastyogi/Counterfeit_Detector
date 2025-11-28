@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
+const Tenant = require('../models/Tenant');
+const Plan = require('../models/Plan');
 
 // Initialize default system admin account
 const initializeAdmin = async () => {
@@ -114,6 +116,18 @@ const login = async (req, res) => {
             expiresIn: '1d'
         });
 
+        // Fetch plan features if user belongs to a tenant
+        let features = {};
+        if (user.tenant_id) {
+            const tenant = await Tenant.findById(user.tenant_id);
+            if (tenant) {
+                const plan = await Plan.findOne({ name: tenant.plan });
+                if (plan && plan.features) {
+                    features = plan.features;
+                }
+            }
+        }
+
         res.json({
             message: 'Login successful',
             token,
@@ -122,7 +136,8 @@ const login = async (req, res) => {
                 fullName: user.fullName,
                 email: user.email,
                 role: userRole,
-                tenant_id: user.tenant_id
+                tenant_id: user.tenant_id,
+                features
             }
         });
     } catch (error) {

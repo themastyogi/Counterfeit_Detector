@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Layout from './components/Layout';
@@ -12,6 +12,7 @@ import ScanHistory from './pages/ScanHistory';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import AdminDashboard from './pages/AdminDashboard';
+import ReferenceManagement from './pages/ReferenceManagement';
 import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
 import PrivacyPolicy from './pages/PrivacyPolicy';

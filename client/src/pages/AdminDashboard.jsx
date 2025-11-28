@@ -452,10 +452,12 @@ const AdminDashboard = () => {
                   <SidebarItem icon={<Users size={20} />} label="Tenants" active={activeTab === 'tenants'} onClick={() => setActiveTab('tenants')} />
                   <SidebarItem icon={<Settings size={20} />} label="Plans" active={activeTab === 'plans'} onClick={() => setActiveTab('plans')} />
                   <SidebarItem icon={<Users size={20} />} label="Users" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
+                  <SidebarItem icon={<Image size={20} />} label="References" onClick={() => window.location.href = '/references'} />
                 </>
               )}
               {isTenantAdmin && (
                 <SidebarItem icon={<Package size={20} />} label="Products" active={activeTab === 'products'} onClick={() => setActiveTab('products')} />
+                <SidebarItem icon={<Image size={20} />} label="References" onClick={() => window.location.href='/references'} />
               )}
             </div>
           </div>

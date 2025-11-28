@@ -257,282 +257,336 @@ const AdminDashboard = () => {
   };
 
   const renderOverview = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <StatCard
-        title="Total Scans"
-        value={adminStats.totalScans.toLocaleString()}
-        icon={<BarChart2 size={24} />}
-        trend={adminStats.scanTrend}
-        color="text-blue-500"
-        bg="bg-blue-50"
-      />
-      <StatCard
-        title="Counterfeits"
-        value={adminStats.totalCounterfeits.toLocaleString()}
-        icon={<AlertTriangle size={24} />}
-        trend={adminStats.counterfeitTrend}
-        color="text-red-500"
-        bg="bg-red-50"
-      />
-      <StatCard
-        title="Active Users"
-        value={adminStats.activeUsers.toLocaleString()}
-        icon={<Users size={24} />}
-        trend={adminStats.activeUserTrend}
-        color="text-emerald-500"
-        bg="bg-emerald-50"
-      />
-      <StatCard
-        title="System Status"
-        value={adminStats.systemStatus}
-        icon={<Database size={24} />}
-        color="text-purple-500"
-        bg="bg-purple-50"
-      />
-    </div>
-  );
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard
+          title="Total Scans"
+          value={adminStats.totalScans.toLocaleString()}
+          icon={<BarChart2 size={24} />}
+          trend={adminStats.scanTrend}
+          color="text-blue-500"
+          bg="bg-blue-50"
+        />
+        <StatCard
+          title="Counterfeits"
+          value={adminStats.totalCounterfeits.toLocaleString()}
+          icon={<AlertTriangle size={24} />}
+          trend={adminStats.counterfeitTrend}
+          color="text-red-500"
+          bg="bg-red-50"
+        />
+        <StatCard
+          title="Active Users"
+          value={adminStats.activeUsers.toLocaleString()}
+          icon={<Users size={24} />}
+          trend={adminStats.activeUserTrend}
+          color="text-emerald-500"
+          bg="bg-emerald-50"
+        />
+        <StatCard
+          title="System Status"
+          value={adminStats.systemStatus}
+          icon={<Database size={24} />}
+          color="text-purple-500"
+          bg="bg-purple-50"
+        />
+      </div>
 
-  const renderTenantManagement = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-bold text-primary">Tenants</h3>
-        <button onClick={() => openCreateModal('tenant')} className="btn btn-primary flex items-center gap-2">
-          <Plus size={18} /> Add Tenant
-        </button>
-      </div>
-      <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-border">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Domain</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Plan</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-text-muted uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {tenants.map(tenant => (
-                <tr key={tenant._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-primary">{tenant.name}</td>
-                  <td className="px-6 py-4 text-sm text-text-muted">{tenant.domain}</td>
-                  <td className="px-6 py-4 text-sm text-text-muted">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {tenant.plan || 'Standard'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      {tenant.status || 'Active'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right text-sm font-medium">
-                    <button onClick={() => handleEditTenant(tenant)} className="text-text-muted hover:text-primary mr-3"><Edit size={16} /></button>
-                    <button onClick={() => handleDeleteTenant(tenant._id)} className="text-text-muted hover:text-danger"><Trash2 size={16} /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Render User Management
-  const renderUserManagement = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-bold text-primary">Users</h3>
-        <button onClick={() => openCreateModal('user')} className="btn btn-primary flex items-center gap-2">
-          <Plus size={18} /> Add User
-        </button>
-      </div>
-      <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-border">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Full Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Email</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Role</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-text-muted uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {users.map(user => (
-                <tr key={user._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-primary">{user.fullName}</td>
-                  <td className="px-6 py-4 text-sm text-text-muted">{user.email}</td>
-                  <td className="px-6 py-4 text-sm text-text-muted">{user.role}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right text-sm font-medium">
-                    <button onClick={() => handleEditUser(user)} className="text-text-muted hover:text-primary mr-3"><Edit size={16} /></button>
-                    <button onClick={() => handleDeleteUser(user._id)} className="text-text-muted hover:text-danger"><Trash2 size={16} /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderPlans = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-bold text-primary">Subscription Plans</h3>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {plans.map(plan => (
-          <div key={plan._id} className="card hover:shadow-lg transition-shadow border-t-4 border-primary">
-            <div className="mb-4">
-              <h4 className="text-xl font-bold text-primary">{plan.name}</h4>
-              <p className="text-2xl font-bold text-text-main mt-2">
-                ${plan.price_per_month}<span className="text-sm text-text-muted font-normal">/month</span>
+      {/* Quick Actions */}
+      <div className="mb-8">
+        <h3 className="text-xl font-bold text-primary mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Reference Management Action */}
+          {(isAdmin || isTenantAdmin) && (
+            <div
+              onClick={handleReferenceClick}
+              className="bg-white p-6 rounded-xl shadow-sm border border-border hover:shadow-md transition-shadow cursor-pointer group"
+            >
+              <div className="flex items-center gap-4 mb-3">
+                <div className={`p-3 rounded-lg ${hasFeature('reference_comparison') ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-400'}`}>
+                  {hasFeature('reference_comparison') ? <Image size={24} /> : <Lock size={24} />}
+                </div>
+                <h4 className="font-bold text-lg text-primary group-hover:text-accent transition-colors">Manage References</h4>
+              </div>
+              <p className="text-sm text-text-muted">
+                Upload and manage reference images for product comparison.
+                {!hasFeature('reference_comparison') && <span className="block mt-1 text-xs text-amber-600">Upgrade required</span>}
               </p>
-              <p className="text-sm text-text-muted mt-1">{plan.description}</p>
             </div>
-            <ul className="space-y-3 mb-6">
-              <li className="flex items-center gap-2 text-sm text-text-muted">
-                <CheckCircle size={16} className="text-green-500" />
-                {plan.local_quota_per_month === -1 ? 'Unlimited' : plan.local_quota_per_month} Local Scans
-              </li>
-              <li className="flex items-center gap-2 text-sm text-text-muted">
-                <CheckCircle size={16} className="text-green-500" />
-                {plan.high_quota_per_month === -1 ? 'Unlimited' : plan.high_quota_per_month} AI Scans
-              </li>
-              <li className="flex items-center gap-2 text-sm text-text-muted">
-                {plan.features?.reference_comparison ? (
-                  <CheckCircle size={16} className="text-green-500" />
-                ) : (
-                  <Lock size={16} className="text-gray-400" />
-                )}
-                Reference Comparison
-              </li>
-            </ul>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+          )}
 
-  const renderProductManagement = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-bold text-primary">Products</h3>
-        <button onClick={() => openCreateModal('product')} className="btn btn-primary flex items-center gap-2">
-          <Plus size={18} /> Add Product
-        </button>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map(product => (
-          <div key={product._id} className="card hover:shadow-lg transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center text-accent">
-                <Package size={24} />
+          {/* Profile Action */}
+          <div
+            onClick={() => window.location.href = '/profile'}
+            className="bg-white p-6 rounded-xl shadow-sm border border-border hover:shadow-md transition-shadow cursor-pointer group"
+          >
+            <div className="flex items-center gap-4 mb-3">
+              <div className="p-3 rounded-lg bg-emerald-50 text-emerald-600">
+                <User size={24} />
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => handleEditProduct(product)} className="p-1 text-text-muted hover:text-primary"><Edit size={16} /></button>
-                <button onClick={() => handleDeleteProduct(product._id)} className="p-1 text-text-muted hover:text-danger"><Trash2 size={16} /></button>
-              </div>
+              <h4 className="font-bold text-lg text-primary group-hover:text-accent transition-colors">My Profile</h4>
             </div>
-            <h4 className="text-lg font-bold text-primary mb-1">{product.product_name}</h4>
-            <p className="text-sm text-text-muted mb-4 font-mono">{product.sku}</p>
-            <div className="flex flex-wrap gap-2">
-              <span className="badge bg-gray-100 text-gray-700">{product.category || 'General'}</span>
-            </div>
+            <p className="text-sm text-text-muted">View your plan details, usage quotas, and account settings.</p>
           </div>
-        ))}
-      </div>
-    </div>
-  );
 
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="flex flex-col md:flex-row gap-8">
-        {/* Sidebar */}
-        <aside className="w-full md:w-64 flex-shrink-0">
-          <div className="bg-surface rounded-xl shadow-sm border border-border p-4 sticky top-24">
-            <div className="space-y-1">
-              <SidebarItem icon={<LayoutGrid size={20} />} label="Overview" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
-              {isAdmin && (
-                <>
-                  <SidebarItem icon={<Users size={20} />} label="Tenants" active={activeTab === 'tenants'} onClick={() => setActiveTab('tenants')} />
-                  <SidebarItem icon={<Settings size={20} />} label="Plans" active={activeTab === 'plans'} onClick={() => setActiveTab('plans')} />
-                  <SidebarItem icon={<Users size={20} />} label="Users" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
-                  <SidebarItem
-                    icon={hasFeature('reference_comparison') ? <Image size={20} /> : <Lock size={20} />}
-                    label="References"
-                    onClick={handleReferenceClick}
-                  />
-                </>
-              )}
-              {isTenantAdmin && (
-                <>
-                  <SidebarItem icon={<Package size={20} />} label="Products" active={activeTab === 'products'} onClick={() => setActiveTab('products')} />
-                  <SidebarItem
-                    icon={hasFeature('reference_comparison') ? <Image size={20} /> : <Lock size={20} />}
-                    label="References"
-                    onClick={handleReferenceClick}
-                  />
-                </>
-              )}
+          {/* Quick Scan Action */}
+          <div
+            onClick={() => window.location.href = '/dashboard'} // Assuming /dashboard is quick scan or redirect
+            className="bg-white p-6 rounded-xl shadow-sm border border-border hover:shadow-md transition-shadow cursor-pointer group"
+          >
+            <div className="flex items-center gap-4 mb-3">
+              <div className="p-3 rounded-lg bg-blue-50 text-blue-600">
+                <ScanLine size={24} />
+              </div>
+              <h4 className="font-bold text-lg text-primary group-hover:text-accent transition-colors">Start New Scan</h4>
             </div>
+            <p className="text-sm text-text-muted">Perform a quick scan to detect counterfeits.</p>
           </div>
-        </aside>
-        {/* Main Content */}
-        <div className="flex-1">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-primary">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
-            <p className="text-text-muted">Manage your organization and resources</p>
-          </div>
-          {activeTab === 'overview' && renderOverview()}
-          {activeTab === 'tenants' && renderTenantManagement()}
-          {activeTab === 'products' && renderProductManagement()}
-          {activeTab === 'users' && renderUserManagement()}
-          {activeTab === 'plans' && renderPlans()}
         </div>
       </div>
-      {/* Modals */}
-      <TenantModal show={showModal && modalType === 'tenant'} onClose={() => { setShowModal(false); setFormData({}); setEditMode(false); setEditingId(null); }} onSubmit={handleSaveTenant} formData={formData} setFormData={setFormData} mode={editMode ? 'edit' : 'create'} plans={plans} />
-      <ProductModal show={showModal && modalType === 'product'} onClose={() => { setShowModal(false); setFormData({}); setEditMode(false); setEditingId(null); }} onSubmit={handleSaveProduct} formData={formData} setFormData={setFormData} mode={editMode ? 'edit' : 'create'} />
-      <UserModal show={showModal && modalType === 'user'} onClose={() => { setShowModal(false); setFormData({}); setEditMode(false); setEditingId(null); }} onSubmit={handleSaveUser} formData={formData} setFormData={setFormData} mode={editMode ? 'edit' : 'create'} tenants={tenants} />
-    </div>
-  );
+      );
+
+const renderTenantManagement = () => (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-bold text-primary">Tenants</h3>
+          <button onClick={() => openCreateModal('tenant')} className="btn btn-primary flex items-center gap-2">
+            <Plus size={18} /> Add Tenant
+          </button>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-border">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Domain</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Plan</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-text-muted uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {tenants.map(tenant => (
+                  <tr key={tenant._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-medium text-primary">{tenant.name}</td>
+                    <td className="px-6 py-4 text-sm text-text-muted">{tenant.domain}</td>
+                    <td className="px-6 py-4 text-sm text-text-muted">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {tenant.plan || 'Standard'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {tenant.status || 'Active'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm font-medium">
+                      <button onClick={() => handleEditTenant(tenant)} className="text-text-muted hover:text-primary mr-3"><Edit size={16} /></button>
+                      <button onClick={() => handleDeleteTenant(tenant._id)} className="text-text-muted hover:text-danger"><Trash2 size={16} /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      );
+
+// Render User Management
+const renderUserManagement = () => (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-bold text-primary">Users</h3>
+          <button onClick={() => openCreateModal('user')} className="btn btn-primary flex items-center gap-2">
+            <Plus size={18} /> Add User
+          </button>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-border">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Full Name</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Role</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-text-muted uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {users.map(user => (
+                  <tr key={user._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-medium text-primary">{user.fullName}</td>
+                    <td className="px-6 py-4 text-sm text-text-muted">{user.email}</td>
+                    <td className="px-6 py-4 text-sm text-text-muted">{user.role}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {user.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm font-medium">
+                      <button onClick={() => handleEditUser(user)} className="text-text-muted hover:text-primary mr-3"><Edit size={16} /></button>
+                      <button onClick={() => handleDeleteUser(user._id)} className="text-text-muted hover:text-danger"><Trash2 size={16} /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      );
+
+const renderPlans = () => (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-bold text-primary">Subscription Plans</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {plans.map(plan => (
+            <div key={plan._id} className="card hover:shadow-lg transition-shadow border-t-4 border-primary">
+              <div className="mb-4">
+                <h4 className="text-xl font-bold text-primary">{plan.name}</h4>
+                <p className="text-2xl font-bold text-text-main mt-2">
+                  ${plan.price_per_month}<span className="text-sm text-text-muted font-normal">/month</span>
+                </p>
+                <p className="text-sm text-text-muted mt-1">{plan.description}</p>
+              </div>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-center gap-2 text-sm text-text-muted">
+                  <CheckCircle size={16} className="text-green-500" />
+                  {plan.local_quota_per_month === -1 ? 'Unlimited' : plan.local_quota_per_month} Local Scans
+                </li>
+                <li className="flex items-center gap-2 text-sm text-text-muted">
+                  <CheckCircle size={16} className="text-green-500" />
+                  {plan.high_quota_per_month === -1 ? 'Unlimited' : plan.high_quota_per_month} AI Scans
+                </li>
+                <li className="flex items-center gap-2 text-sm text-text-muted">
+                  {plan.features?.reference_comparison ? (
+                    <CheckCircle size={16} className="text-green-500" />
+                  ) : (
+                    <Lock size={16} className="text-gray-400" />
+                  )}
+                  Reference Comparison
+                </li>
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+      );
+
+const renderProductManagement = () => (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-bold text-primary">Products</h3>
+          <button onClick={() => openCreateModal('product')} className="btn btn-primary flex items-center gap-2">
+            <Plus size={18} /> Add Product
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {products.map(product => (
+            <div key={product._id} className="card hover:shadow-lg transition-shadow">
+              <div className="flex justify-between items-start mb-4">
+                <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center text-accent">
+                  <Package size={24} />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => handleEditProduct(product)} className="p-1 text-text-muted hover:text-primary"><Edit size={16} /></button>
+                  <button onClick={() => handleDeleteProduct(product._id)} className="p-1 text-text-muted hover:text-danger"><Trash2 size={16} /></button>
+                </div>
+              </div>
+              <h4 className="text-lg font-bold text-primary mb-1">{product.product_name}</h4>
+              <p className="text-sm text-text-muted mb-4 font-mono">{product.sku}</p>
+              <div className="flex flex-wrap gap-2">
+                <span className="badge bg-gray-100 text-gray-700">{product.category || 'General'}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      );
+
+      return (
+      <div className="min-h-screen bg-background">
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Sidebar */}
+          <aside className="w-full md:w-64 flex-shrink-0">
+            <div className="bg-surface rounded-xl shadow-sm border border-border p-4 sticky top-24">
+              <div className="space-y-1">
+                <SidebarItem icon={<LayoutGrid size={20} />} label="Overview" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
+                {isAdmin && (
+                  <>
+                    <SidebarItem icon={<Users size={20} />} label="Tenants" active={activeTab === 'tenants'} onClick={() => setActiveTab('tenants')} />
+                    <SidebarItem icon={<Settings size={20} />} label="Plans" active={activeTab === 'plans'} onClick={() => setActiveTab('plans')} />
+                    <SidebarItem icon={<Users size={20} />} label="Users" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
+                    <SidebarItem
+                      icon={hasFeature('reference_comparison') ? <Image size={20} /> : <Lock size={20} />}
+                      label="References"
+                      onClick={handleReferenceClick}
+                    />
+                  </>
+                )}
+                {isTenantAdmin && (
+                  <>
+                    <SidebarItem icon={<Package size={20} />} label="Products" active={activeTab === 'products'} onClick={() => setActiveTab('products')} />
+                    <SidebarItem
+                      icon={hasFeature('reference_comparison') ? <Image size={20} /> : <Lock size={20} />}
+                      label="References"
+                      onClick={handleReferenceClick}
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+          </aside>
+          {/* Main Content */}
+          <div className="flex-1">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-primary">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
+              <p className="text-text-muted">Manage your organization and resources</p>
+            </div>
+            {activeTab === 'overview' && renderOverview()}
+            {activeTab === 'tenants' && renderTenantManagement()}
+            {activeTab === 'products' && renderProductManagement()}
+            {activeTab === 'users' && renderUserManagement()}
+            {activeTab === 'plans' && renderPlans()}
+          </div>
+        </div>
+        {/* Modals */}
+        <TenantModal show={showModal && modalType === 'tenant'} onClose={() => { setShowModal(false); setFormData({}); setEditMode(false); setEditingId(null); }} onSubmit={handleSaveTenant} formData={formData} setFormData={setFormData} mode={editMode ? 'edit' : 'create'} plans={plans} />
+        <ProductModal show={showModal && modalType === 'product'} onClose={() => { setShowModal(false); setFormData({}); setEditMode(false); setEditingId(null); }} onSubmit={handleSaveProduct} formData={formData} setFormData={setFormData} mode={editMode ? 'edit' : 'create'} />
+        <UserModal show={showModal && modalType === 'user'} onClose={() => { setShowModal(false); setFormData({}); setEditMode(false); setEditingId(null); }} onSubmit={handleSaveUser} formData={formData} setFormData={setFormData} mode={editMode ? 'edit' : 'create'} tenants={tenants} />
+      </div>
+      );
 };
 
-const StatCard = ({ title, value, icon, trend, color, bg }) => (
-  <div className="card hover:shadow-lg transition-shadow">
-    <div className="flex items-start justify-between mb-4">
-      <div>
-        <p className="text-sm font-medium text-text-muted">{title}</p>
-        <h3 className="text-2xl font-bold text-primary mt-1">{value}</h3>
+      const StatCard = ({title, value, icon, trend, color, bg}) => (
+      <div className="card hover:shadow-lg transition-shadow">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className="text-sm font-medium text-text-muted">{title}</p>
+            <h3 className="text-2xl font-bold text-primary mt-1">{value}</h3>
+          </div>
+          <div className={`p-3 rounded-lg ${bg} ${color}`}>
+            {icon}
+          </div>
+        </div>
+        {trend && (
+          <div className={`text-sm font-medium ${trend.startsWith('+') ? 'text-emerald-600' : 'text-red-600'}`}>
+            {trend} <span className="text-text-muted font-normal">from last month</span>
+          </div>
+        )}
       </div>
-      <div className={`p-3 rounded-lg ${bg} ${color}`}>
+      );
+
+      const SidebarItem = ({icon, label, active, onClick}) => (
+      <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${active ? 'bg-primary text-white shadow-md' : 'text-text-muted hover:bg-gray-50 hover:text-primary'}`}>
         {icon}
-      </div>
-    </div>
-    {trend && (
-      <div className={`text-sm font-medium ${trend.startsWith('+') ? 'text-emerald-600' : 'text-red-600'}`}>
-        {trend} <span className="text-text-muted font-normal">from last month</span>
-      </div>
-    )}
-  </div>
-);
+        {label}
+      </button>
+      );
 
-const SidebarItem = ({ icon, label, active, onClick }) => (
-  <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${active ? 'bg-primary text-white shadow-md' : 'text-text-muted hover:bg-gray-50 hover:text-primary'}`}>
-    {icon}
-    {label}
-  </button>
-);
-
-export default AdminDashboard;
+      export default AdminDashboard;

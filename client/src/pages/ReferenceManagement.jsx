@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Upload, Trash2, Image as ImageIcon, AlertCircle, CheckCircle } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -74,7 +75,7 @@ function ReferenceManagement() {
             formData.append('image', imageFile);
             formData.append('notes', notes);
 
-            const response = await axios.post(`${API_URL}/api/references/upload`, formData, {
+            await axios.post(`${API_URL}/api/references/upload`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -116,214 +117,178 @@ function ReferenceManagement() {
     };
 
     return (
-        <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Reference Image Management</h1>
-                <button
-                    onClick={() => navigate('/admin')}
-                    style={{
-                        padding: '0.5rem 1rem',
-                        backgroundColor: '#6b7280',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '0.375rem',
-                        cursor: 'pointer'
-                    }}
-                >
-                    ← Back to Admin
-                </button>
-            </div>
-
-            {message.text && (
-                <div style={{
-                    padding: '1rem',
-                    marginBottom: '1rem',
-                    borderRadius: '0.375rem',
-                    backgroundColor: message.type === 'success' ? '#d1fae5' : '#fee2e2',
-                    color: message.type === 'success' ? '#065f46' : '#991b1b',
-                    border: `1px solid ${message.type === 'success' ? '#10b981' : '#ef4444'}`
-                }}>
-                    {message.text}
-                </div>
-            )}
-
-            {/* Upload Form */}
-            <div style={{
-                backgroundColor: 'white',
-                padding: '2rem',
-                borderRadius: '0.5rem',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                marginBottom: '2rem'
-            }}>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '1.5rem' }}>
-                    Upload New Reference Image
-                </h2>
-
-                <form onSubmit={handleUpload}>
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                            Select Product *
-                        </label>
-                        <select
-                            value={selectedProduct}
-                            onChange={(e) => setSelectedProduct(e.target.value)}
-                            style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                border: '1px solid #d1d5db',
-                                borderRadius: '0.375rem',
-                                fontSize: '1rem'
-                            }}
-                            required
-                        >
-                            <option value="">-- Select a product --</option>
-                            {products.map(product => (
-                                <option key={product._id} value={product._id}>
-                                    {product.product_name} - {product.brand} ({product.category})
-                                </option>
-                            ))}
-                        </select>
+        <div className="min-h-screen bg-background p-6">
+            <div className="max-w-6xl mx-auto">
+                {/* Header */}
+                <div className="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 className="text-3xl font-bold text-primary">Reference Management</h1>
+                        <p className="text-text-muted mt-1">Manage reference images for product comparison</p>
                     </div>
-
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                            Reference Image *
-                        </label>
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                            style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                border: '1px solid #d1d5db',
-                                borderRadius: '0.375rem'
-                            }}
-                            required
-                        />
-                        {imagePreview && (
-                            <img
-                                src={imagePreview}
-                                alt="Preview"
-                                style={{
-                                    marginTop: '1rem',
-                                    maxWidth: '300px',
-                                    maxHeight: '300px',
-                                    borderRadius: '0.375rem',
-                                    border: '1px solid #d1d5db'
-                                }}
-                            />
-                        )}
-                    </div>
-
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                            Notes (Optional)
-                        </label>
-                        <textarea
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder="e.g., Official product photo from manufacturer website"
-                            style={{
-                                width: '100%',
-                                padding: '0.75rem',
-                                border: '1px solid #d1d5db',
-                                borderRadius: '0.375rem',
-                                fontSize: '1rem',
-                                minHeight: '80px'
-                            }}
-                        />
-                    </div>
-
                     <button
-                        type="submit"
-                        disabled={loading}
-                        style={{
-                            padding: '0.75rem 2rem',
-                            backgroundColor: loading ? '#9ca3af' : '#3b82f6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '0.375rem',
-                            fontSize: '1rem',
-                            fontWeight: '500',
-                            cursor: loading ? 'not-allowed' : 'pointer'
-                        }}
+                        onClick={() => navigate('/admin')}
+                        className="btn btn-secondary flex items-center gap-2"
                     >
-                        {loading ? 'Uploading...' : 'Upload Reference Image'}
+                        <ArrowLeft size={18} />
+                        Back to Admin
                     </button>
-                </form>
-            </div>
+                </div>
 
-            {/* Reference List */}
-            <div style={{
-                backgroundColor: 'white',
-                padding: '2rem',
-                borderRadius: '0.5rem',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-            }}>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '1.5rem' }}>
-                    Existing Reference Images ({references.length})
-                </h2>
-
-                {references.length === 0 ? (
-                    <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>
-                        No reference images uploaded yet
-                    </p>
-                ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                        {references.map(ref => (
-                            <div key={ref._id} style={{
-                                border: '1px solid #e5e7eb',
-                                borderRadius: '0.5rem',
-                                padding: '1rem',
-                                backgroundColor: '#f9fafb'
-                            }}>
-                                <div style={{ marginBottom: '1rem' }}>
-                                    <img
-                                        src={`${API_URL}/${ref.reference_image_path}`}
-                                        alt="Reference"
-                                        style={{
-                                            width: '100%',
-                                            height: '200px',
-                                            objectFit: 'cover',
-                                            borderRadius: '0.375rem'
-                                        }}
-                                    />
-                                </div>
-                                <div style={{ marginBottom: '0.5rem' }}>
-                                    <strong>{ref.product_id?.product_name || 'Unknown Product'}</strong>
-                                </div>
-                                <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.5rem' }}>
-                                    Brand: {ref.product_id?.brand || 'N/A'}<br />
-                                    Category: {ref.product_id?.category || 'N/A'}
-                                </div>
-                                {ref.notes && (
-                                    <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.5rem', fontStyle: 'italic' }}>
-                                        {ref.notes}
-                                    </div>
-                                )}
-                                <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '1rem' }}>
-                                    Uploaded: {new Date(ref.createdAt).toLocaleDateString()}
-                                </div>
-                                <button
-                                    onClick={() => handleDelete(ref._id)}
-                                    style={{
-                                        padding: '0.5rem 1rem',
-                                        backgroundColor: '#ef4444',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '0.375rem',
-                                        fontSize: '0.875rem',
-                                        cursor: 'pointer',
-                                        width: '100%'
-                                    }}
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        ))}
+                {message.text && (
+                    <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                        }`}>
+                        {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+                        {message.text}
                     </div>
                 )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Upload Form */}
+                    <div className="lg:col-span-1">
+                        <div className="bg-surface rounded-xl shadow-sm border border-border p-6 sticky top-24">
+                            <h2 className="text-xl font-bold text-primary mb-6 flex items-center gap-2">
+                                <Upload size={20} className="text-accent" />
+                                Upload New Reference
+                            </h2>
+
+                            <form onSubmit={handleUpload} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-text-main mb-1">
+                                        Select Product *
+                                    </label>
+                                    <select
+                                        value={selectedProduct}
+                                        onChange={(e) => setSelectedProduct(e.target.value)}
+                                        className="input w-full"
+                                        required
+                                    >
+                                        <option value="">-- Select a product --</option>
+                                        {products.map(product => (
+                                            <option key={product._id} value={product._id}>
+                                                {product.product_name} - {product.brand}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-text-main mb-1">
+                                        Reference Image *
+                                    </label>
+                                    <div className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageChange}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            required={!imageFile}
+                                        />
+                                        {imagePreview ? (
+                                            <div className="relative">
+                                                <img
+                                                    src={imagePreview}
+                                                    alt="Preview"
+                                                    className="max-h-48 mx-auto rounded-md"
+                                                />
+                                                <div className="mt-2 text-xs text-text-muted">Click to change</div>
+                                            </div>
+                                        ) : (
+                                            <div className="py-4">
+                                                <ImageIcon className="mx-auto h-10 w-10 text-text-muted mb-2" />
+                                                <p className="text-sm text-text-muted">Click to upload image</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-text-main mb-1">
+                                        Notes (Optional)
+                                    </label>
+                                    <textarea
+                                        value={notes}
+                                        onChange={(e) => setNotes(e.target.value)}
+                                        placeholder="e.g., Official product photo from manufacturer website"
+                                        className="input w-full min-h-[80px]"
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="btn btn-primary w-full flex justify-center items-center gap-2"
+                                >
+                                    {loading ? (
+                                        <>Uploading...</>
+                                    ) : (
+                                        <>
+                                            <Upload size={18} />
+                                            Upload Reference
+                                        </>
+                                    )}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    {/* Reference List */}
+                    <div className="lg:col-span-2">
+                        <div className="bg-surface rounded-xl shadow-sm border border-border p-6">
+                            <h2 className="text-xl font-bold text-primary mb-6 flex items-center gap-2">
+                                <ImageIcon size={20} className="text-accent" />
+                                Existing References ({references.length})
+                            </h2>
+
+                            {references.length === 0 ? (
+                                <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-border">
+                                    <ImageIcon className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                                    <p className="text-text-muted">No reference images uploaded yet</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {references.map(ref => (
+                                        <div key={ref._id} className="group bg-white rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow">
+                                            <div className="aspect-video bg-gray-100 relative overflow-hidden">
+                                                <img
+                                                    src={`${API_URL}/${ref.reference_image_path}`}
+                                                    alt="Reference"
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                />
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                                            </div>
+                                            <div className="p-4">
+                                                <h3 className="font-bold text-primary truncate">
+                                                    {ref.product_id?.product_name || 'Unknown Product'}
+                                                </h3>
+                                                <div className="text-sm text-text-muted mt-1 mb-3">
+                                                    <p>Brand: {ref.product_id?.brand || 'N/A'}</p>
+                                                    <p>Category: {ref.product_id?.category || 'N/A'}</p>
+                                                </div>
+                                                {ref.notes && (
+                                                    <p className="text-xs text-text-muted italic bg-gray-50 p-2 rounded mb-3">
+                                                        "{ref.notes}"
+                                                    </p>
+                                                )}
+                                                <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+                                                    <span className="text-xs text-text-muted">
+                                                        {new Date(ref.createdAt).toLocaleDateString()}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => handleDelete(ref._id)}
+                                                        className="text-danger hover:bg-red-50 p-2 rounded-full transition-colors"
+                                                        title="Delete Reference"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

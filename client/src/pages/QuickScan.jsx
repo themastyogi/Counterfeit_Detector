@@ -289,94 +289,96 @@ const QuickScan = () => {
                                     </div>
                                 ))}
                             </div>
+                        )}
+                    </div>
 
                     {/* Selected Category Display */}
-                        <select
-                            className="input-field w-full"
-                            value={selectedProduct}
-                            onChange={e => {
-                                setSelectedProduct(e.target.value);
-                                const product = products.find(p => p._id === e.target.value);
-                                if (product) {
-                                    setSearchQuery(product.product_name);
-                                } else {
-                                    setSearchQuery('');
-                                }
-                            }}
-                        >
-                            <option value="">-- Choose Category --</option>
-                            {products.map(p => (
-                                <option key={p._id} value={p._id}>{p.product_name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    {/* Scan Mode */}
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-text-main mb-1">Scan Mode</label>
-                        <div className="flex rounded-lg bg-background p-1 border border-border">
-                            {['AUTO', 'LOCAL', 'AI_VISION'].map(mode => (
-                                <button
-                                    key={mode}
-                                    className={`flex-1 py-2 text-sm font-medium rounded-md transition ${scanMode === mode ? 'bg-white text-accent shadow-sm' : 'text-text-muted hover:bg-gray-50 hover:text-primary'}`}
-                                    onClick={() => setScanMode(mode)}
-                                >
-                                    {mode === 'AI_VISION' ? 'AI Vision' : mode === 'LOCAL' ? 'Internal' : 'Auto'}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                    {/* Image Upload */}
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-text-main mb-1">Upload Image</label>
-                        <div
-                            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition ${preview ? 'border-accent bg-blue-50/30' : 'border-border hover:border-accent hover:bg-gray-50'}`}
-                            onClick={() => document.getElementById('fileInput').click()}
-                        >
-                            {preview ? (
-                                <img src={preview} alt="preview" className="max-h-64 mx-auto rounded" />
-                            ) : (
-                                <>
-                                    <Upload className="h-8 w-8 mx-auto text-accent mb-2" />
-                                    <p className="text-text-main">Click to upload or drag &amp; drop</p>
-                                    <p className="text-xs text-text-muted">SVG, PNG, JPG or GIF (max 5MB)</p>
-                                </>
-                            )}
-                            <input type="file" id="fileInput" accept="image/*" className="hidden" onChange={handleImageChange} />
-                        </div>
-                        <div className="flex items-center justify-center my-2 text-xs text-text-muted">OR</div>
-                        <button className="btn btn-outline w-full" onClick={handleOpenCamera} type="button">
-                            <Camera size={18} className="mr-2" /> Open Camera
-                        </button>
-                    </div>
-                    {/* Scan Button */}
-                    <button
-                        className="btn btn-primary w-full flex items-center justify-center gap-2 py-2"
-                        onClick={handleScan}
-                        disabled={loading}
+                    <select
+                        className="input-field w-full"
+                        value={selectedProduct}
+                        onChange={e => {
+                            setSelectedProduct(e.target.value);
+                            const product = products.find(p => p._id === e.target.value);
+                            if (product) {
+                                setSearchQuery(product.product_name);
+                            } else {
+                                setSearchQuery('');
+                            }
+                        }}
                     >
-                        {loading ? <Loader className="animate-spin" size={20} /> : <><ScanLine size={20} className="mr-2" /> Run Analysis</>}
+                        <option value="">-- Choose Category --</option>
+                        {products.map(p => (
+                            <option key={p._id} value={p._id}>{p.product_name}</option>
+                        ))}
+                    </select>
+                </div>
+                {/* Scan Mode */}
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-text-main mb-1">Scan Mode</label>
+                    <div className="flex rounded-lg bg-background p-1 border border-border">
+                        {['AUTO', 'LOCAL', 'AI_VISION'].map(mode => (
+                            <button
+                                key={mode}
+                                className={`flex-1 py-2 text-sm font-medium rounded-md transition ${scanMode === mode ? 'bg-white text-accent shadow-sm' : 'text-text-muted hover:bg-gray-50 hover:text-primary'}`}
+                                onClick={() => setScanMode(mode)}
+                            >
+                                {mode === 'AI_VISION' ? 'AI Vision' : mode === 'LOCAL' ? 'Internal' : 'Auto'}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                {/* Image Upload */}
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-text-main mb-1">Upload Image</label>
+                    <div
+                        className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition ${preview ? 'border-accent bg-blue-50/30' : 'border-border hover:border-accent hover:bg-gray-50'}`}
+                        onClick={() => document.getElementById('fileInput').click()}
+                    >
+                        {preview ? (
+                            <img src={preview} alt="preview" className="max-h-64 mx-auto rounded" />
+                        ) : (
+                            <>
+                                <Upload className="h-8 w-8 mx-auto text-accent mb-2" />
+                                <p className="text-text-main">Click to upload or drag &amp; drop</p>
+                                <p className="text-xs text-text-muted">SVG, PNG, JPG or GIF (max 5MB)</p>
+                            </>
+                        )}
+                        <input type="file" id="fileInput" accept="image/*" className="hidden" onChange={handleImageChange} />
+                    </div>
+                    <div className="flex items-center justify-center my-2 text-xs text-text-muted">OR</div>
+                    <button className="btn btn-outline w-full" onClick={handleOpenCamera} type="button">
+                        <Camera size={18} className="mr-2" /> Open Camera
                     </button>
                 </div>
-                {/* Camera Modal */}
-                {showCamera && (
-                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-xl max-w-md w-full p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-xl font-bold text-primary">Capture Photo</h3>
-                                <button onClick={handleCloseCamera} className="text-text-muted hover:text-primary">✕</button>
-                            </div>
-                            <video id="cameraVideo" autoPlay playsInline className="w-full h-auto" />
-                            <div className="mt-4 flex gap-3">
-                                <button onClick={handleCapturePhoto} className="flex-1 btn btn-primary flex items-center justify-center gap-2">
-                                    <Camera size={18} /> Capture Photo
-                                </button>
-                                <button onClick={handleCloseCamera} className="flex-1 btn btn-outline">Cancel</button>
-                            </div>
+                {/* Scan Button */}
+                <button
+                    className="btn btn-primary w-full flex items-center justify-center gap-2 py-2"
+                    onClick={handleScan}
+                    disabled={loading}
+                >
+                    {loading ? <Loader className="animate-spin" size={20} /> : <><ScanLine size={20} className="mr-2" /> Run Analysis</>}
+                </button>
+            </div>
+            {/* Camera Modal */}
+            {showCamera && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-xl max-w-md w-full p-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold text-primary">Capture Photo</h3>
+                            <button onClick={handleCloseCamera} className="text-text-muted hover:text-primary">✕</button>
+                        </div>
+                        <video id="cameraVideo" autoPlay playsInline className="w-full h-auto" />
+                        <div className="mt-4 flex gap-3">
+                            <button onClick={handleCapturePhoto} className="flex-1 btn btn-primary flex items-center justify-center gap-2">
+                                <Camera size={18} /> Capture Photo
+                            </button>
+                            <button onClick={handleCloseCamera} className="flex-1 btn btn-outline">Cancel</button>
                         </div>
                     </div>
-                )}
-            </div>
-            );
+                </div>
+            )}
+        </div>
+    );
 };
 
-            export default QuickScan;
+export default QuickScan;

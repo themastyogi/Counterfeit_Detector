@@ -456,8 +456,10 @@ const AdminDashboard = () => {
                 </>
               )}
               {isTenantAdmin && (
-                <SidebarItem icon={<Package size={20} />} label="Products" active={activeTab === 'products'} onClick={() => setActiveTab('products')} />
-                <SidebarItem icon={<Image size={20} />} label="References" onClick={() => window.location.href='/references'} />
+                <>
+                  <SidebarItem icon={<Package size={20} />} label="Products" active={activeTab === 'products'} onClick={() => setActiveTab('products')} />
+                  <SidebarItem icon={<Image size={20} />} label="References" onClick={() => window.location.href = '/references'} />
+                </>
               )}
             </div>
           </div>

@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const Tenant = require('../models/Tenant');
 const Plan = require('../models/Plan');
+const ProductMaster = require('../models/ProductMaster');
 
 // Initialize default system admin account
 const initializeAdmin = async () => {
@@ -273,7 +274,18 @@ const fixRole = async (req, res) => {
 
         await user.save();
 
-        res.json({ message: 'Role updated successfully' });
+        // Check if tenant has products, if not seed them
+        const productCount = await ProductMaster.countDocuments({ tenant_id: user.tenant_id });
+        if (productCount === 0) {
+            const sampleProducts = [
+                { tenant_id: user.tenant_id, product_name: 'iPhone 15 Pro', brand: 'Apple', category: 'Smartphones', sku: `APPL-IPH15P-${Math.floor(Math.random() * 1000)}` },
+                { tenant_id: user.tenant_id, product_name: 'Samsung Galaxy S24', brand: 'Samsung', category: 'Smartphones', sku: `SMSG-S24-${Math.floor(Math.random() * 1000)}` },
+                { tenant_id: user.tenant_id, product_name: 'Nike Air Jordan', brand: 'Nike', category: 'Footwear', sku: `NIKE-AIRJ-${Math.floor(Math.random() * 1000)}` }
+            ];
+            await ProductMaster.insertMany(sampleProducts);
+        }
+
+        res.json({ message: 'Role updated and sample products created' });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }

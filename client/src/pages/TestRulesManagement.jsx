@@ -226,7 +226,18 @@ const TestRulesManagement = () => {
         <div className="max-w-7xl mx-auto p-6">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-primary mb-2">Test Rules Management</h1>
-                <p className="text-text-muted">Configure validation rules and weights for each product category</p>
+                <p className="text-text-muted mb-4">Configure validation rules and weights for each product category</p>
+
+                {/* Quick Start Guide */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="font-semibold text-blue-900 mb-2">Quick Start:</h3>
+                    <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                        <li>Select a product from the left panel</li>
+                        <li>Click a template (Book, Mobile, etc.) to apply pre-configured rules</li>
+                        <li>Customize rules and weights as needed</li>
+                        <li>Click "Save Rules" to apply</li>
+                    </ol>
+                </div>
             </div>
 
             {message && (
@@ -245,8 +256,8 @@ const TestRulesManagement = () => {
                                 key={product._id}
                                 onClick={() => handleProductSelect(product)}
                                 className={`w-full text-left p-3 rounded-lg transition-colors ${selectedProduct?._id === product._id
-                                        ? 'bg-blue-50 border-2 border-blue-500'
-                                        : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                                    ? 'bg-blue-50 border-2 border-blue-500'
+                                    : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
                                     }`}
                             >
                                 <div className="font-semibold text-sm">{product.product_name}</div>
@@ -260,7 +271,14 @@ const TestRulesManagement = () => {
                 <div className="lg:col-span-2 space-y-6">
                     {/* Template Library */}
                     <div className="card p-6">
-                        <h2 className="text-lg font-bold text-primary mb-4">Template Library</h2>
+                        <div className="mb-4">
+                            <h2 className="text-lg font-bold text-primary mb-2">Template Library</h2>
+                            <p className="text-sm text-text-muted">
+                                {selectedProduct
+                                    ? "Click a template below to apply pre-configured rules for that category"
+                                    : "Select a product first to apply templates"}
+                            </p>
+                        </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             {Object.entries(templates).map(([key, template]) => {
                                 const Icon = template.icon;
@@ -268,9 +286,14 @@ const TestRulesManagement = () => {
                                     <button
                                         key={key}
                                         onClick={() => applyTemplate(key)}
-                                        className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 rounded-lg transition-all flex flex-col items-center gap-2"
+                                        disabled={!selectedProduct}
+                                        className={`p-4 rounded-lg transition-all flex flex-col items-center gap-2 ${selectedProduct
+                                            ? 'bg-gradient-to-br from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 hover:shadow-lg cursor-pointer'
+                                            : 'bg-gray-100 cursor-not-allowed opacity-50'
+                                            }`}
+                                        title={selectedProduct ? `Apply ${template.name}` : 'Select a product first'}
                                     >
-                                        <Icon className="w-8 h-8 text-blue-600" />
+                                        <Icon className={`w-8 h-8 ${selectedProduct ? 'text-blue-600' : 'text-gray-400'}`} />
                                         <span className="text-xs font-medium text-center">{template.name}</span>
                                     </button>
                                 );

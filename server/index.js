@@ -81,9 +81,8 @@ if (process.env.NODE_ENV !== 'production') {
     }
 }
 
-// Serve static files from uploads directory (PROTECTED - requires authentication)
-const { verifyToken } = require('./middleware/authMiddleware');
-app.use('/uploads', verifyToken, express.static(path.join(__dirname, 'uploads')));
+// Serve static files from uploads directory (PUBLIC for image display)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Basic Route (Dev only)
 if (process.env.NODE_ENV !== 'production') {

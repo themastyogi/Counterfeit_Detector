@@ -79,7 +79,7 @@ router.get('/product/:productId', verifyToken, async (req, res) => {
  * Get all reference images (admin only)
  * GET /api/references
  */
-router.get('/', verifyToken, isTenantAdmin, checkFeature('reference_comparison'), async (req, res) => {
+router.get('/', verifyToken, isTenantAdmin, async (req, res) => {
     try {
         const query = req.user.role === 'tenant_admin' && req.user.tenant_id
             ? { tenant_id: req.user.tenant_id }
@@ -89,11 +89,12 @@ router.get('/', verifyToken, isTenantAdmin, checkFeature('reference_comparison')
         query.is_active = true;
 
         const references = await ProductReference.find(query)
-            .populate('product_id', 'product_name brand category')
+            .populate('product_id', 'product_name brand category sku')
             .sort({ createdAt: -1 });
 
         res.json(references);
     } catch (error) {
+        console.error('Error fetching references:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });

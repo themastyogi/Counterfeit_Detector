@@ -76,14 +76,23 @@ router.get('/product/:productId', verifyToken, async (req, res) => {
 });
 
 /**
- * Get all reference images (admin only)
+ * Get all reference images
  * GET /api/references
  */
-router.get('/', verifyToken, isTenantAdmin, async (req, res) => {
+router.get('/', verifyToken, async (req, res) => {
     try {
-        const query = req.user.role === 'tenant_admin' && req.user.tenant_id
-            ? { tenant_id: req.user.tenant_id }
-            : {};
+        let query = {};
+
+        // System admins see all references
+        if (req.user.role === 'system_admin') {
+            query = {};
+        }
+        // Tenant users see only their tenant's references
+        else if (req.user.tenant_id) {
+            query.tenant_id = req.user.tenant_id;
+        } else {
+            return res.status(403).json({ message: 'Access denied' });
+        }
 
         // Filter by active
         query.is_active = true;
@@ -92,6 +101,7 @@ router.get('/', verifyToken, isTenantAdmin, async (req, res) => {
             .populate('product_id', 'product_name brand category sku')
             .sort({ createdAt: -1 });
 
+        console.log(`📸 Fetched ${references.length} references for user ${req.user.id}`);
         res.json(references);
     } catch (error) {
         console.error('Error fetching references:', error);

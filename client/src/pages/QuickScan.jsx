@@ -34,6 +34,9 @@ const QuickScan = () => {
                 if (productsRes.ok) {
                     const data = await productsRes.json();
                     setProducts(data);
+                    console.log('✅ Products loaded:', data.length);
+                } else {
+                    console.error('❌ Failed to fetch products:', productsRes.status);
                 }
 
                 // Fetch References (Specific Products)
@@ -42,11 +45,13 @@ const QuickScan = () => {
                 });
                 if (referencesRes.ok) {
                     const data = await referencesRes.json();
-                    // Filter only active references
-                    setReferences(data.filter(r => r.is_active));
+                    setReferences(data);
+                    console.log('✅ References loaded:', data.length);
+                } else {
+                    console.error('❌ Failed to fetch references:', referencesRes.status, await referencesRes.text());
                 }
             } catch (err) {
-                console.error('Error fetching data', err);
+                console.error('❌ Error fetching data', err);
             }
         };
         if (token) fetchData();

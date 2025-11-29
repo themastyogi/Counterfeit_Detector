@@ -23,8 +23,11 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     }
 
     // Allow both system admins and tenant admins to access admin routes
-    if (adminOnly && !isAdmin && !isTenantAdmin) {
-        return <Navigate to="/dashboard" replace />;
+    if (adminOnly) {
+        console.log('ProtectedRoute Check:', { adminOnly, isAdmin, isTenantAdmin, role: useAuth().user?.role });
+        if (!isAdmin && !isTenantAdmin) {
+            return <Navigate to="/dashboard" replace />;
+        }
     }
 
     return children;

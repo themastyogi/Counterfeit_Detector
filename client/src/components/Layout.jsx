@@ -74,7 +74,7 @@ const Layout = () => {
                       <div className="text-sm font-semibold text-primary">{user?.fullName || 'User'}</div>
                       <div className={`text-xs flex items-center justify-end gap-1 ${plan.color}`}>
                         <PlanIcon size={12} />
-                        {plan.label}
+                        {plan.label} ({user?.role})
                       </div>
                     </Link>
                     <button

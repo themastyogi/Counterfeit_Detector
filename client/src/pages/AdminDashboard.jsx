@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-Users, Package, Settings, Image, Plus, Trash2, Edit, BarChart2, AlertTriangle, Database, LayoutGrid, CheckCircle, Lock, User, ScanLine
+import {
+  Users, Package, Settings, Image, Plus, Trash2, Edit, BarChart2, AlertTriangle, Database, LayoutGrid, CheckCircle, Lock, User, ScanLine
 } from 'lucide-react';
 import { TenantModal, ProductModal, UserModal } from '../components/AdminModals';
 

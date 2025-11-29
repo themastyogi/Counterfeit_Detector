@@ -257,11 +257,15 @@ const fixRole = async (req, res) => {
 
         // If no tenant exists, create a default one
         if (!user.tenant_id) {
+            // Generate a simple code from name or random
+            const code = (user.fullName.substring(0, 3) + Math.floor(Math.random() * 1000)).toUpperCase();
+
             const newTenant = new Tenant({
                 name: `${user.fullName}'s Organization`,
+                code: code,
                 domain: user.email.split('@')[1] || 'veriscan.com',
                 plan: 'Standard',
-                status: 'Active'
+                status: 'ACTIVE'
             });
             await newTenant.save();
             user.tenant_id = newTenant._id;

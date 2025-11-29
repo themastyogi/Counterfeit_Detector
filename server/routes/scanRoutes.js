@@ -169,7 +169,7 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                             referenceId: reference._id,
                             referencePath: reference.reference_image_path,
                             referenceName: reference.product_id?.product_name,
-                            referenceImage: reference.reference_image_path ? `/uploads/${path.basename(reference.reference_image_path)}` : null
+                            referenceImage: reference.reference_image_path ? `/${reference.reference_image_path}` : null
                         };
 
                         const adjustment = adjustRiskScoreWithReference(riskScore, referenceComparison);
@@ -193,7 +193,7 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                             referenceComparison = {
                                 ...bestMatch,
                                 referenceName: refObj?.product_id?.product_name,
-                                referenceImage: refObj?.reference_image_path ? `/uploads/${path.basename(refObj.reference_image_path)}` : null
+                                referenceImage: refObj?.reference_image_path ? `/${refObj.reference_image_path}` : null
                             };
 
                             const adjustment = adjustRiskScoreWithReference(riskScore, referenceComparison);

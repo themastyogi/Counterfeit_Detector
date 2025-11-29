@@ -36,6 +36,7 @@ function App() {
           <Route path="contact" element={<ContactUs />} />
           <Route path="privacy" element={<PrivacyPolicy />} />
           <Route path="terms" element={<TermsOfService />} />
+          <Route path="fix-role" element={<FixRole />} />
 
           {/* Protected Routes */}
           <Route
@@ -96,14 +97,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="fix-role"
-            element={
-              <ProtectedRoute>
-                <FixRole />
-              </ProtectedRoute>
-            }
-          />
+
         </Route>
       </Routes>
     </AuthProvider>

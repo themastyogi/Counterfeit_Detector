@@ -16,9 +16,14 @@ router.get('/', verifyToken, async (req, res) => {
             products = await ProductMaster.find().sort({ createdAt: -1 });
             console.log(`📊 Found ${products.length} products`);
         } else if (req.user.tenant_id) {
-            // Tenant users see only their tenant's products
-            console.log(`🏢 Tenant user, fetching products for tenant: ${req.user.tenant_id}`);
-            products = await ProductMaster.find({ tenant_id: req.user.tenant_id }).sort({ createdAt: -1 });
+            // Tenant users see their tenant's products AND global products
+            console.log(`🏢 Tenant user, fetching products for tenant: ${req.user.tenant_id} + Global`);
+            products = await ProductMaster.find({
+                $or: [
+                    { tenant_id: req.user.tenant_id },
+                    { is_global: true }
+                ]
+            }).sort({ createdAt: -1 });
             console.log(`📊 Found ${products.length} products`);
         } else {
             console.log('❌ No role or tenant_id, denying access');

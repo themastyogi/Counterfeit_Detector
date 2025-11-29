@@ -36,6 +36,10 @@ const productMasterSchema = new mongoose.Schema({
     metadata_json: {
         type: Map,
         of: String
+    },
+    is_global: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

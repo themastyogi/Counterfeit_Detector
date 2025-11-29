@@ -1,5 +1,6 @@
 // Reference Comparison Service
 // Compares scanned images against reference images of genuine products
+const { analyzeImage } = require('./visionService');
 
 /**
  * Calculate color similarity between two color arrays
@@ -262,7 +263,29 @@ function adjustRiskScoreWithReference(baseRiskScore, comparisonResult) {
     };
 }
 
+/**
+ * Extract fingerprint from an image using Vision API
+ */
+async function extractFingerprint(imagePath) {
+    try {
+        const analysis = await analyzeImage(imagePath);
+
+        // Transform analysis into a standardized fingerprint structure
+        return {
+            dominantColors: analysis.imageProperties?.dominantColors || [],
+            logos: analysis.logos || [],
+            textPatterns: analysis.textDetection || {},
+            labels: analysis.labels || [],
+            timestamp: new Date()
+        };
+    } catch (error) {
+        console.error('Error extracting fingerprint:', error);
+        throw error;
+    }
+}
+
 module.exports = {
+    extractFingerprint,
     compareWithReference,
     compareWithMultipleReferences,
     adjustRiskScoreWithReference,

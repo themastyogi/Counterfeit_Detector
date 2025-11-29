@@ -112,7 +112,23 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Start Server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
+
+    // Initialize admin account
     initializeAdmin();
+
+    // Enable reference_comparison for Standard plan (auto-migration)
+    try {
+        const Plan = require('./models/Plan');
+        const result = await Plan.updateOne(
+            { name: /^standard$/i },
+            { $set: { 'features.reference_comparison': true } }
+        );
+        if (result.modifiedCount > 0) {
+            console.log('✅ Enabled reference_comparison for Standard plan');
+        }
+    } catch (error) {
+        console.error('⚠️  Could not enable reference feature:', error.message);
+    }
 });

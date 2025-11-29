@@ -58,7 +58,7 @@ const Layout = () => {
                     </Link>
                   </div>
 
-                  {isAdmin && (
+                  {(isAdmin || user?.role === 'tenant_admin') && (
                     <Link
                       to="/admin"
                       className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-sm font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
@@ -146,7 +146,7 @@ const Layout = () => {
                     Scan History
                   </Link>
 
-                  {isAdmin && (
+                  {(isAdmin || user?.role === 'tenant_admin') && (
                     <Link
                       to="/admin"
                       onClick={() => setIsMenuOpen(false)}

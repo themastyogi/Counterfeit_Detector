@@ -130,4 +130,66 @@ app.listen(PORT, async () => {
     } catch (error) {
         console.error('⚠️  Could not enable reference feature:', error.message);
     }
+
+    // Fix users without tenant_id (auto-migration)
+    try {
+        const User = require('./models/User');
+        const Tenant = require('./models/Tenant');
+        const TenantPlan = require('./models/TenantPlan');
+        const ProductMaster = require('./models/ProductMaster');
+        const Plan = require('./models/Plan');
+
+        const usersWithoutTenant = await User.find({
+            tenant_id: { $exists: false },
+            role: { $ne: 'system_admin' }
+        });
+
+        if (usersWithoutTenant.length > 0) {
+            console.log(`🔧 Fixing ${usersWithoutTenant.length} users without tenant...`);
+
+            for (const user of usersWithoutTenant) {
+                // Create tenant
+                const code = (user.fullName.substring(0, 3) + Math.floor(Math.random() * 1000)).toUpperCase();
+                const newTenant = new Tenant({
+                    name: `${user.fullName}'s Organization`,
+                    code: code,
+                    domain: user.email.split('@')[1] || 'veriscan.com',
+                    plan: 'Standard',
+                    status: 'ACTIVE'
+                });
+                await newTenant.save();
+
+                // Assign tenant to user
+                user.tenant_id = newTenant._id;
+                if (user.role === 'user') {
+                    user.role = 'tenant_admin';
+                }
+                await user.save();
+
+                // Create TenantPlan
+                const standardPlan = await Plan.findOne({ name: /^standard$/i });
+                if (standardPlan) {
+                    const tenantPlan = new TenantPlan({
+                        tenant_id: newTenant._id,
+                        plan_id: standardPlan._id,
+                        start_date: new Date(),
+                        end_date: null
+                    });
+                    await tenantPlan.save();
+                }
+
+                // Create sample products
+                const sampleProducts = [
+                    { tenant_id: newTenant._id, product_name: 'iPhone 15 Pro', brand: 'Apple', category: 'Smartphones', sku: `APPL-IPH15P-${Math.floor(Math.random() * 1000)}` },
+                    { tenant_id: newTenant._id, product_name: 'Samsung Galaxy S24', brand: 'Samsung', category: 'Smartphones', sku: `SMSG-S24-${Math.floor(Math.random() * 1000)}` },
+                    { tenant_id: newTenant._id, product_name: 'Books', brand: 'Generic', category: 'Books', sku: `BOOK-${Math.floor(Math.random() * 1000)}` }
+                ];
+                await ProductMaster.insertMany(sampleProducts);
+
+                console.log(`✅ Fixed user: ${user.email}`);
+            }
+        }
+    } catch (error) {
+        console.error('⚠️  Could not fix users without tenant:', error.message);
+    }
 });

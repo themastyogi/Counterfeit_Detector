@@ -19,6 +19,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import UserProfile from './pages/UserProfile';
 import FixRole from './pages/FixRole';
+import TestRulesManagement from './pages/TestRulesManagement';
 
 function App() {
   return (
@@ -88,12 +89,20 @@ function App() {
             }
           />
 
-          {/* Admin Only Route */}
+          {/* Admin Only Routes */}
           <Route
             path="admin"
             element={
               <ProtectedRoute adminOnly>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="test-rules"
+            element={
+              <ProtectedRoute adminOnly>
+                <TestRulesManagement />
               </ProtectedRoute>
             }
           />

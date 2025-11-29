@@ -17,6 +17,7 @@ import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
+import UserProfile from './pages/UserProfile';
 
 function App() {
   return (
@@ -65,6 +66,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <ScanHistory />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="profile"
+            element={
+              <ProtectedRoute>
+                <UserProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="references"
+            element={
+              <ProtectedRoute>
+                <ReferenceManagement />
               </ProtectedRoute>
             }
           />

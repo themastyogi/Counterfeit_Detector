@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const ProtectedRoute = ({ children, adminOnly = false }) => {
-    const { isAuthenticated, isAdmin, loading } = useAuth();
+    const { isAuthenticated, isAdmin, isTenantAdmin, loading } = useAuth();
 
     if (loading) {
         return (
@@ -22,7 +22,8 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
         return <Navigate to="/login" replace />;
     }
 
-    if (adminOnly && !isAdmin) {
+    // Allow both system admins and tenant admins to access admin routes
+    if (adminOnly && !isAdmin && !isTenantAdmin) {
         return <Navigate to="/dashboard" replace />;
     }
 

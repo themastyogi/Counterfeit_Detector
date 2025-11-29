@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, Trash2, Image as ImageIcon, AlertCircle, CheckCircle } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 
 function ReferenceManagement() {
     const navigate = useNavigate();
@@ -24,7 +24,7 @@ function ReferenceManagement() {
     const fetchProducts = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/api/products`, {
+            const response = await axios.get('/api/products', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setProducts(response.data);
@@ -36,7 +36,7 @@ function ReferenceManagement() {
     const fetchReferences = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${API_URL}/api/references`, {
+            const response = await axios.get('/api/references', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setReferences(response.data);
@@ -75,7 +75,7 @@ function ReferenceManagement() {
             formData.append('image', imageFile);
             formData.append('notes', notes);
 
-            await axios.post(`${API_URL}/api/references/upload`, formData, {
+            await axios.post('/api/references/upload', formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -103,7 +103,7 @@ function ReferenceManagement() {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`${API_URL}/api/references/${referenceId}`, {
+            await axios.delete(`/api/references/${referenceId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setMessage({ type: 'success', text: 'Reference deleted successfully' });

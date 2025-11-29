@@ -86,3 +86,48 @@
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 }
+
+/* Print Styles */
+@media print {
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:bg-white {
+    background-color: white !important;
+  }
+
+  .print\:border-0 {
+    border-width: 0 !important;
+  }
+
+  .print\:border-b {
+    border-bottom-width: 1px !important;
+    border-bottom-color: #000 !important;
+  }
+
+  .print\:rounded-none {
+    border-radius: 0 !important;
+  }
+
+  /* Ensure content fits on page */
+  .card {
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+
+  /* Add page break before test report section if needed */
+  .test-report-section {
+    page-break-before: auto;
+  }
+}

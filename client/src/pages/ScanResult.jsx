@@ -9,6 +9,11 @@ const ScanResult = () => {
     const { hasFeature } = useAuth();
     const result = location.state?.result;
 
+    // State for test report
+    const [remarks, setRemarks] = React.useState('');
+    const [testerName, setTesterName] = React.useState('');
+    const [testDate, setTestDate] = React.useState(new Date().toISOString().split('T')[0]);
+
     if (!result) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
@@ -43,6 +48,11 @@ const ScanResult = () => {
     // Check if reference comparison is available and allowed
     const showComparison = result.reference_comparison && hasFeature('reference_comparison');
     const referenceData = result.reference_comparison;
+
+    // Print function
+    const handlePrint = () => {
+        window.print();
+    };
 
     return (
         <div className="max-w-4xl mx-auto p-4">
@@ -190,8 +200,56 @@ const ScanResult = () => {
                         </div>
                     </div>
 
+                    {/* Test Report Section */}
+                    <div className="border-t border-border p-6 bg-gray-50/50 print:bg-white">
+                        <h3 className="text-lg font-bold text-primary mb-4">Test Report & Notes</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label className="block text-sm font-medium text-text-main mb-2">
+                                    Tester Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={testerName}
+                                    onChange={(e) => setTesterName(e.target.value)}
+                                    className="input-field print:border-0 print:border-b print:rounded-none"
+                                    placeholder="Enter your name"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-text-main mb-2">
+                                    Test Date
+                                </label>
+                                <input
+                                    type="date"
+                                    value={testDate}
+                                    onChange={(e) => setTestDate(e.target.value)}
+                                    className="input-field print:border-0 print:border-b print:rounded-none"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-text-main mb-2">
+                                Testing Remarks & Observations
+                            </label>
+                            <textarea
+                                value={remarks}
+                                onChange={(e) => setRemarks(e.target.value)}
+                                className="input-field min-h-[120px] print:border-0 print:border-b print:rounded-none"
+                                placeholder="Enter your observations, testing notes, or any additional remarks about this scan..."
+                            />
+                        </div>
+                        <p className="text-xs text-text-muted mt-2 print:hidden">
+                            These notes will be included in the printed report
+                        </p>
+                    </div>
+
                     {/* Actions */}
-                    <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-border">
+                    <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-border print:hidden">
+                        <button className="flex-1 btn btn-primary flex items-center justify-center gap-2" onClick={handlePrint}>
+                            <Download size={18} />
+                            Print Report
+                        </button>
                         <button className="flex-1 btn btn-primary flex items-center justify-center gap-2" onClick={() => navigate('/quick-scan')}>
                             <RefreshCw size={18} />
                             Scan Another Item
@@ -200,14 +258,6 @@ const ScanResult = () => {
                             <Shield size={18} />
                             View History
                         </button>
-                        <div className="flex gap-2">
-                            <button className="btn btn-outline px-4" title="Download Report">
-                                <Download size={18} />
-                            </button>
-                            <button className="btn btn-outline px-4" title="Share Result">
-                                <Share2 size={18} />
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>

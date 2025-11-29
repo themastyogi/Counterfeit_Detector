@@ -77,15 +77,10 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
         await scanJob.save();
         console.log('✅ Scan job created:', scanJob._id);
 
-        // Perform scan using Vision API with category validation
+        // Perform scan using Vision API with NEW EVALUATION ENGINE
         console.log('🔎 Analyzing image...');
         const { analyzeImage } = require('../services/visionService');
-        const { validateCategory } = require('../services/categoryValidation');
-        const { analyzeAuthenticity } = require('../services/authenticityDetection');
-        const { compareWithMultipleReferences, compareWithReference, adjustRiskScoreWithReference } = require('../services/referenceComparison');
-        const { getTrainingData, calculateTrainingAdjustment } = require('../services/trainingService');
-        const detectionProfiles = require('../config/detectionProfiles');
-        const ProductReference = require('../models/ProductReference');
+        const { evaluateScan } = require('../services/scanEvaluationEngine');
 
         setTimeout(async () => {
             try {
@@ -97,139 +92,62 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                 console.log('🔍 Data source:', visionResult.dataSource);
                 console.log('📝 Detected text:', visionResult.textDetection?.text || 'No text detected');
 
-                // Get product details for category
-                let productCategory = 'Other';
+                // Get product details
+                let product = null;
                 if (product_id) {
-                    const product = await ProductMaster.findById(product_id);
-                    if (product) {
-                        productCategory = product.product_name || product.category || 'Other';
-                    }
+                    product = await ProductMaster.findById(product_id);
+                    console.log('📦 Product loaded:', product?.product_name);
                 }
 
-                // Validate category match
-                const categoryValidation = validateCategory(productCategory, visionResult.labels);
-                console.log('🔍 Category validation:', categoryValidation.isMatch ? '✅ Match' : '❌ Mismatch');
+                // Use NEW EVALUATION ENGINE
+                const evaluation = await evaluateScan(
+                    product || { brand: 'Unknown', category: 'Other', metadata_json: {} },
+                    [image_path],
+                    visionResult,
+                    { reference_id }
+                );
 
-                // Analyze authenticity (logo, text quality, patterns)
-                const authenticityResult = analyzeAuthenticity(visionResult, productCategory, categoryValidation);
-                console.log('🔍 Authenticity analysis:', authenticityResult.riskScore > 50 ? '⚠️ High risk' : '✅ Low risk');
-                console.log('🚩 Flags found:', Object.keys(authenticityResult.flags));
+                console.log('🎯 Evaluation complete:', evaluation.used_mode);
+                console.log('📊 Risk Score:', evaluation.risk_score);
+                console.log('⚖️ Status:', evaluation.status);
+                console.log('🚩 Violations:', evaluation.violations.length);
 
-                // Calculate risk score with ADAPTIVE BASELINE
-                const baselineRisk = detectionProfiles.getBaselineRisk(productCategory);
-                let riskScore = baselineRisk;
-                let status = 'LIKELY_GENUINE';
+                // Map evaluation result to legacy format for compatibility
+                const riskScore = evaluation.risk_score;
+                const status = evaluation.status;
                 const flags = {};
 
-                console.log(`📊 Using adaptive baseline: ${baselineRisk} for category: ${productCategory}`);
+                // Convert violations to flags
+                evaluation.violations.forEach(v => {
+                    flags[v.code] = v.message;
+                });
 
-                // Category validation (informational only - match doesn't reduce risk)
-                if (!categoryValidation.isMatch) {
-                    // Category mismatch is a red flag
-                    riskScore += 60;
-                    flags['Category Mismatch'] = categoryValidation.reason;
-                } else {
-                    // Category match is just informational, doesn't affect risk
-                    flags['Category Match'] = `Matched: ${categoryValidation.matchedLabels.join(', ')}`;
-                }
+                // Add evaluation mode info
+                flags['Evaluation Mode'] = evaluation.used_mode;
 
-                // Add authenticity risk score and flags (THIS IS THE MAIN DETECTION)
-                riskScore += authenticityResult.riskScore;
-                Object.assign(flags, authenticityResult.flags);
-
-                // Check safe search (spoof detection)
-                if (visionResult.safeSearch?.spoof === 'POSSIBLE' || visionResult.safeSearch?.spoof === 'LIKELY') {
-                    riskScore += 30;
-                    flags['Spoof Detection'] = 'Possible manipulation detected';
-                }
-
-                // Check if critical authenticity markers are missing
-                const hasLogoCheck = authenticityResult.flags['Brand Verified'] || authenticityResult.flags['Logo Detection'];
-                const hasTextCheck = authenticityResult.flags['Watermark Detected'] || authenticityResult.flags['Text Quality'];
-
-                if (!hasLogoCheck && !hasTextCheck) {
-                    riskScore += 15;
-                    flags['Limited Verification'] = 'Unable to verify key authenticity markers';
-                }
-
-                // Add detected labels to flags (informational)
-                flags['Detected Labels'] = visionResult.labels.slice(0, 5).map(l => l.description).join(', ');
-
-                // === REFERENCE COMPARISON (if available) ===
+                // Build reference comparison data (if available)
                 let referenceComparison = null;
-
-                // If specific reference ID is provided, use that
-                if (reference_id) {
-                    console.log(`🔍 Using specific reference ID: ${reference_id}`);
+                if (evaluation.used_mode === 'REFERENCE_COMPARE' && evaluation.debug_info.similarity !== undefined) {
+                    const ProductReference = require('../models/ProductReference');
                     const reference = await ProductReference.findById(reference_id).populate('product_id');
-                    if (reference && reference.is_active) {
-                        const comparison = compareWithReference(visionResult, reference.fingerprint);
+
+                    if (reference) {
                         referenceComparison = {
-                            ...comparison,
+                            overallSimilarity: evaluation.debug_info.similarity,
                             referenceId: reference._id,
-                            referencePath: reference.reference_image_path,
+                            confidence: evaluation.debug_info.similarity > 0.8 ? 'HIGH' :
+                                evaluation.debug_info.similarity > 0.5 ? 'MEDIUM' : 'LOW',
                             referenceName: reference.product_id?.product_name,
-                            referenceImage: reference.reference_image_path ? `/${reference.reference_image_path.replace(/\\/g, '/')}` : null
+                            referenceImage: reference.reference_image_path ? `/${reference.reference_image_path.replace(/\\/g, '/')}` : null,
+                            details: {
+                                colorMatch: evaluation.debug_info.similarity,
+                                logoMatch: evaluation.debug_info.similarity,
+                                textMatch: evaluation.debug_info.similarity
+                            }
                         };
-
-                        const adjustment = adjustRiskScoreWithReference(riskScore, referenceComparison);
-                        riskScore = adjustment.adjustedScore;
-                        flags['Reference Comparison'] = adjustment.reason;
-                        console.log(`📊 Specific Reference adjustment: ${adjustment.adjustment} (${adjustment.reason})`);
-                    } else {
-                        console.log('⚠️ Specific reference not found or inactive');
-                    }
-                }
-                // Fallback to category-based reference search if product_id is available
-                else if (product_id) {
-                    const references = await ProductReference.find({ product_id, is_active: true }).populate('product_id');
-                    if (references.length > 0) {
-                        console.log(`🔍 Found ${references.length} reference image(s) for comparison`);
-                        const bestMatch = compareWithMultipleReferences(visionResult, references);
-
-                        if (bestMatch) {
-                            // Find the reference object to get details
-                            const refObj = references.find(r => r._id.toString() === bestMatch.referenceId.toString());
-                            referenceComparison = {
-                                ...bestMatch,
-                                referenceName: refObj?.product_id?.product_name,
-                                referenceImage: refObj?.reference_image_path ? `/${refObj.reference_image_path.replace(/\\/g, '/')}` : null
-                            };
-
-                            const adjustment = adjustRiskScoreWithReference(riskScore, referenceComparison);
-                            riskScore = adjustment.adjustedScore;
-                            flags['Reference Comparison'] = adjustment.reason;
-                            console.log(`📊 Reference adjustment: ${adjustment.adjustment} (${adjustment.reason})`);
-                        }
                     }
                 }
 
-                // === TRAINING DATA ADJUSTMENT (if available) ===
-                if (product_id) {
-                    try {
-                        const trainingData = await getTrainingData(scanJob.tenant_id, product_id);
-                        if (trainingData.length >= 5) {
-                            const trainingAdj = calculateTrainingAdjustment(riskScore, product_id, trainingData);
-                            riskScore += trainingAdj.adjustment;
-                            flags['Training Insight'] = trainingAdj.reason;
-                            console.log(`🎓 Training adjustment: ${trainingAdj.adjustment} (${trainingAdj.reason})`);
-                        }
-                    } catch (err) {
-                        console.log('⚠️ Training data not available:', err.message);
-                    }
-                }
-
-                // Ensure risk score stays within bounds
-                riskScore = Math.max(0, Math.min(100, Math.round(riskScore)));
-
-                // Determine final status (stricter thresholds)
-                if (riskScore > 60) {
-                    status = 'HIGH_RISK';
-                } else if (riskScore > 30) {
-                    status = 'SUSPICIOUS';
-                } else {
-                    status = 'LIKELY_GENUINE';
-                }
                 const history = new ScanHistory({
                     tenant_id: scanJob.tenant_id,
                     user_id: scanJob.user_id,

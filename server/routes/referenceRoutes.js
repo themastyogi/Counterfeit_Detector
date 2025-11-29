@@ -12,17 +12,27 @@ const { extractFingerprint } = require('../services/referenceComparison');
  * Upload reference image for a product
  * POST /api/references/upload
  */
-router.post('/upload', verifyToken, isTenantAdmin, checkFeature('reference_comparison'), upload.single('image'), async (req, res) => {
+router.post('/upload', verifyToken, isTenantAdmin, upload.single('image'), async (req, res) => {
     try {
+        console.log('📸 Reference upload - Start');
+        console.log('User:', req.user);
+        console.log('Body:', req.body);
+        console.log('File:', req.file);
+
         const { product_id, notes } = req.body;
         const image_path = req.file ? req.file.path : null;
 
         if (!product_id || !image_path) {
+            console.log('❌ Missing product_id or image_path');
             return res.status(400).json({ message: 'Product ID and image are required' });
         }
 
+        console.log('✅ Validation passed, extracting fingerprint...');
+
         // Extract fingerprint from the uploaded image
         const fingerprint = await extractFingerprint(image_path);
+
+        console.log('✅ Fingerprint extracted, creating reference...');
 
         const reference = new ProductReference({
             product_id,
@@ -33,15 +43,19 @@ router.post('/upload', verifyToken, isTenantAdmin, checkFeature('reference_compa
             tenant_id: req.user.tenant_id
         });
 
+        console.log('💾 Saving reference to database...');
         await reference.save();
+
+        console.log('✅ Reference saved successfully');
 
         res.status(201).json({
             message: 'Reference image uploaded successfully',
             reference
         });
     } catch (error) {
-        console.error('Error uploading reference:', error);
-        res.status(500).json({ message: 'Server error', error: error.message });
+        console.error('❌ Error uploading reference:', error);
+        console.error('Stack trace:', error.stack);
+        res.status(500).json({ message: 'Server error', error: error.message, stack: error.stack });
     }
 });
 

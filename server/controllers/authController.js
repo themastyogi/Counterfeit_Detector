@@ -274,6 +274,24 @@ const fixRole = async (req, res) => {
 
         await user.save();
 
+        // Create TenantPlan if it doesn't exist
+        const TenantPlan = require('../models/TenantPlan');
+        const existingTenantPlan = await TenantPlan.findOne({ tenant_id: user.tenant_id });
+
+        if (!existingTenantPlan) {
+            const standardPlan = await Plan.findOne({ name: /^standard$/i });
+            if (standardPlan) {
+                const tenantPlan = new TenantPlan({
+                    tenant_id: user.tenant_id,
+                    plan_id: standardPlan._id,
+                    start_date: new Date(),
+                    end_date: null // No expiry
+                });
+                await tenantPlan.save();
+                console.log('✅ Created TenantPlan for tenant');
+            }
+        }
+
         // Check if tenant has products, if not seed them
         const productCount = await ProductMaster.countDocuments({ tenant_id: user.tenant_id });
         if (productCount === 0) {

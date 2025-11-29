@@ -35,11 +35,16 @@ if (process.env.NODE_ENV !== 'production') {
 // Connect to MongoDB
 connectDB();
 
-// Create uploads directory if it doesn't exist
+// Create uploads directories if they don't exist
 const fs = require('fs');
 const uploadsDir = path.join(__dirname, 'uploads');
+const referencesDir = path.join(__dirname, 'uploads', 'references');
+
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir);
+}
+if (!fs.existsSync(referencesDir)) {
+    fs.mkdirSync(referencesDir, { recursive: true });
 }
 
 // Routes - ORDER MATTERS!

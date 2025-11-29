@@ -264,6 +264,44 @@ function adjustRiskScoreWithReference(baseRiskScore, comparisonResult) {
 }
 
 /**
+ * Extract fingerprint from an image using Vision API
+ */
+async function extractFingerprint(imagePath) {
+    try {
+        const analysis = await analyzeImage(imagePath);
+
+        // Helper function to convert RGB object to hex string
+        const rgbToHex = (colorObj) => {
+            if (!colorObj) return '#000000';
+
+            // Handle both formats: {red, green, blue} and {color: {red, green, blue}}
+            const rgb = colorObj.color || colorObj;
+
+            const r = Math.round(rgb.red || 0);
+            const g = Math.round(rgb.green || 0);
+            const b = Math.round(rgb.blue || 0);
+
+            return '#' + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
+        };
+
+        // Transform analysis into a standardized fingerprint structure
+        const dominantColors = (analysis.imageProperties?.dominantColors || []).map(colorData => ({
+            color: rgbToHex(colorData),
+            score: colorData.score || 0,
+            pixelFraction: colorData.pixelFraction || 0
+        }));
+
+        return {
+            dominantColors,
+            logos: analysis.logos || [],
+            textPatterns: analysis.textDetection || {},
+            labels: analysis.labels || [],
+            timestamp: new Date()
+        };
+    } catch (error) {
         console.error('Error extracting fingerprint:', error);
         throw error;
     }

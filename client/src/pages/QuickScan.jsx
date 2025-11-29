@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, Camera, Search, AlertCircle, Loader, ScanLine, Mail, ArrowRight, KeyRound, Shield, Check } from 'lucide-react';
+import { Upload, Camera, Search, AlertCircle, Loader, ScanLine, Mail, ArrowRight, KeyRound, Shield, Check, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const QuickScan = () => {
     const navigate = useNavigate();
-    const { token } = useAuth();
+    const { token, user, isAdmin, isTenantAdmin } = useAuth();
     const [products, setProducts] = useState([]);
     const [references, setReferences] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -220,6 +220,32 @@ const QuickScan = () => {
                     <div className="mb-4 bg-red-50 border-l-4 border-danger p-3 rounded-md flex items-start gap-2">
                         <AlertCircle className="h-5 w-5 text-danger" />
                         <span className="text-sm text-danger">{error}</span>
+                    </div>
+                )}
+
+                ))}
+
+                {/* Test Rules Quick Action (for admins/tenant_admins) */}
+                {(isAdmin || isTenantAdmin) && (
+                    <div className="mb-6 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                            <div className="bg-purple-100 p-2 rounded-lg">
+                                <Settings className="w-6 h-6 text-purple-600" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-semibold text-purple-900 mb-1">Test Rules Management</h3>
+                                <p className="text-sm text-purple-700 mb-3">
+                                    Configure validation rules and weights for product categories
+                                </p>
+                                <button
+                                    onClick={() => navigate('/test-rules')}
+                                    className="btn btn-sm bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
+                                >
+                                    <Settings size={16} />
+                                    Manage Rules
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
 

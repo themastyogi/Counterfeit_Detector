@@ -216,11 +216,14 @@ const TestRulesManagement = () => {
                 <div className="card p-8 text-center">
                     <Settings className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-                    <p className="text-gray-600">Only admins can manage test rules.</p>
+                    <p className="text-gray-600">Only admins and tenant admins can manage test rules.</p>
                 </div>
             </div>
         );
     }
+
+    // Check if user has edit permission (admin or tenant_admin)
+    const canEdit = isAdmin || isTenantAdmin;
 
     return (
         <div className="max-w-7xl mx-auto p-6">
@@ -398,11 +401,12 @@ const TestRulesManagement = () => {
                             <div className="flex gap-3">
                                 <button
                                     onClick={saveRules}
-                                    disabled={loading}
+                                    disabled={loading || !canEdit}
                                     className="btn btn-primary flex-1 flex items-center justify-center gap-2"
+                                    title={!canEdit ? "You don't have permission to edit rules" : ""}
                                 >
                                     <Save size={20} />
-                                    {loading ? 'Saving...' : 'Save Rules'}
+                                    {loading ? 'Saving...' : canEdit ? 'Save Rules' : 'View Only'}
                                 </button>
                                 <button
                                     onClick={() => handleProductSelect(selectedProduct)}

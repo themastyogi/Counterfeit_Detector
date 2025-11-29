@@ -253,8 +253,10 @@ const fixRole = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Promote to tenant_admin
-        user.role = 'tenant_admin';
+        // Promote to tenant_admin ONLY if not already system_admin
+        if (user.role !== 'system_admin') {
+            user.role = 'tenant_admin';
+        }
 
         // If no tenant exists, create a default one
         if (!user.tenant_id) {

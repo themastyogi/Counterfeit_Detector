@@ -30,7 +30,7 @@ const Layout = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Navbar */}
-      <nav className="bg-surface border-b border-border sticky top-0 z-50 backdrop-blur-md bg-opacity-90">
+      <nav className="bg-surface border-b border-border sticky top-0 z-50 backdrop-blur-md bg-opacity-90 print:hidden">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             {/* Logo */}
@@ -194,7 +194,7 @@ const Layout = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-surface border-t border-border py-12 mt-auto">
+      <footer className="bg-surface border-t border-border py-12 mt-auto print:hidden">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             {/* Company Info */}

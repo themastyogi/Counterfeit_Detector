@@ -15,7 +15,7 @@ const seedPlans = async () => {
             { name: 'STANDARD' },
             {
                 $set: {
-                    'features.reference_comparison': false
+                    'features.reference_comparison': true
                 }
             },
             { upsert: true, new: true }

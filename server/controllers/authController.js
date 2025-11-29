@@ -243,4 +243,36 @@ const resetPassword = async (req, res) => {
     }
 };
 
-module.exports = { register, login, updatePassword, forgotPassword, resetPassword, initializeAdmin };
+const fixRole = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Promote to tenant_admin
+        user.role = 'tenant_admin';
+
+        // If no tenant exists, create a default one
+        if (!user.tenant_id) {
+            const newTenant = new Tenant({
+                name: `${user.fullName}'s Organization`,
+                domain: user.email.split('@')[1] || 'veriscan.com',
+                plan: 'Standard',
+                status: 'Active'
+            });
+            await newTenant.save();
+            user.tenant_id = newTenant._id;
+        }
+
+        await user.save();
+
+        res.json({ message: 'Role updated successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+module.exports = { register, login, updatePassword, forgotPassword, resetPassword, initializeAdmin, fixRole };

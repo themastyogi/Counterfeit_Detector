@@ -18,6 +18,7 @@ import ContactUs from './pages/ContactUs';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import UserProfile from './pages/UserProfile';
+import FixRole from './pages/FixRole';
 
 function App() {
   return (
@@ -92,6 +93,14 @@ function App() {
             element={
               <ProtectedRoute adminOnly>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="fix-role"
+            element={
+              <ProtectedRoute>
+                <FixRole />
               </ProtectedRoute>
             }
           />

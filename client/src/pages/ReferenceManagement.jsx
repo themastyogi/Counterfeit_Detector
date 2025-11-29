@@ -250,7 +250,7 @@ function ReferenceManagement() {
                                         <div key={ref._id} className="group bg-white rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow">
                                             <div className="aspect-video bg-gray-100 relative overflow-hidden">
                                                 <img
-                                                    src={`${API_URL}/${ref.reference_image_path}`}
+                                                    src={`/${ref.reference_image_path}`}
                                                     alt="Reference"
                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                 />

@@ -68,6 +68,8 @@ const analyzeImage = async (imagePath) => {
                 ? { source: { imageUri: imagePath } }
                 : { source: { filename: imagePath } };
 
+            console.log('🖼️ Vision API Image Source:', JSON.stringify(imageSource));
+
             const [result] = await visionClient.annotateImage({
                 image: imageSource,
                 features: [

@@ -195,6 +195,11 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                         details: referenceComparison.details
                     } : undefined
                 });
+
+                if (referenceComparison) {
+                    console.log('💾 Saving ScanHistory with reference image:', referenceComparison.referenceImage);
+                }
+
                 await history.save();
 
                 scanJob.status = 'COMPLETED';

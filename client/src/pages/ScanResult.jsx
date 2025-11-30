@@ -166,20 +166,33 @@ const ScanResult = () => {
                                 <div>
                                     <h3 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Scan Details</h3>
                                     <div className="bg-background rounded-lg p-4 space-y-3 border border-border">
-                                        <div className="flex justify-between">
-                                            <span className="text-text-muted">Scan ID</span>
-                                            <span className="font-mono text-sm text-primary">{result._id?.substring(0, 8)}...</span>
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-text-muted text-xs uppercase tracking-wider">Scan ID</span>
+                                            <div className="flex items-center gap-2 bg-gray-50 p-2 rounded border border-gray-200">
+                                                <code className="font-mono text-sm text-primary flex-1 break-all select-all">
+                                                    {result._id}
+                                                </code>
+                                                <button
+                                                    onClick={() => navigator.clipboard.writeText(result._id)}
+                                                    className="p-1 hover:bg-gray-200 rounded text-gray-500 transition-colors"
+                                                    title="Copy ID"
+                                                >
+                                                    <Share2 size={14} />
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-text-muted">Date</span>
-                                            <span className="font-medium text-primary">{new Date(result.createdAt).toLocaleDateString()}</span>
+                                        <div className="grid grid-cols-2 gap-4 pt-2">
+                                            <div>
+                                                <span className="text-text-muted text-xs block mb-1">Date</span>
+                                                <span className="font-medium text-primary">{new Date(result.createdAt).toLocaleDateString()}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-text-muted text-xs block mb-1">Time</span>
+                                                <span className="font-medium text-primary">{new Date(result.createdAt).toLocaleTimeString()}</span>
+                                            </div>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-text-muted">Time</span>
-                                            <span className="font-medium text-primary">{new Date(result.createdAt).toLocaleTimeString()}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-text-muted">Mode</span>
+                                        <div>
+                                            <span className="text-text-muted text-xs block mb-1">Mode</span>
                                             <span className="badge bg-blue-100 text-blue-800">{result.scan_type}</span>
                                         </div>
                                     </div>
@@ -188,30 +201,73 @@ const ScanResult = () => {
 
                             <div className="space-y-6">
                                 <div>
-                                    <h3 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Analysis Summary</h3>
-                                    <div className="bg-background rounded-lg p-4 border border-border h-full">
-                                        <p className="text-text-main leading-relaxed">
-                                            The AI analysis detected {result.status === 'LIKELY_GENUINE' ? 'no significant anomalies' : 'potential irregularities'} in the scanned image.
-                                            The confidence score indicates a {result.risk_score < 20 ? 'high' : 'low'} probability of authenticity based on the trained model parameters.
-                                        </p>
+                                    <h3 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Detailed Analysis Report</h3>
+                                    <div className="bg-background rounded-lg border border-border overflow-hidden">
+                                        {/* Executive Summary */}
+                                        <div className="p-4 bg-gray-50 border-b border-border">
+                                            <p className="text-text-main text-sm leading-relaxed">
+                                                The AI analysis detected {result.status === 'LIKELY_GENUINE' ? 'no significant anomalies' : 'potential irregularities'} in the scanned image.
+                                                The confidence score indicates a {result.risk_score < 20 ? 'high' : 'low'} probability of authenticity based on the trained model parameters.
+                                            </p>
+                                        </div>
+
+                                        {/* Detailed Breakdown */}
+                                        <div className="p-4 space-y-4">
+                                            {/* Color Analysis */}
+                                            <div className="flex items-start gap-3">
+                                                <div className={`mt-1 w-2 h-2 rounded-full ${referenceData?.details?.colorMatch > 0.8 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                                <div>
+                                                    <span className="font-semibold text-sm block">Color Consistency</span>
+                                                    <p className="text-sm text-text-muted">
+                                                        {referenceData?.details?.colorMatch > 0.8
+                                                            ? `Colors match the reference standard (${(referenceData.details.colorMatch * 100).toFixed(0)}% similarity).`
+                                                            : `Significant color deviation detected (${(referenceData.details.colorMatch * 100).toFixed(0)}% similarity). This may indicate a photocopy or poor print quality.`}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Text Analysis */}
+                                            <div className="flex items-start gap-3">
+                                                <div className={`mt-1 w-2 h-2 rounded-full ${referenceData?.details?.textMatch > 0.8 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                                <div>
+                                                    <span className="font-semibold text-sm block">Text & Typography</span>
+                                                    <p className="text-sm text-text-muted">
+                                                        {referenceData?.details?.textMatch > 0.8
+                                                            ? `Text content and layout align with the reference (${(referenceData.details.textMatch * 100).toFixed(0)}% match).`
+                                                            : `Text discrepancies found (${(referenceData.details.textMatch * 100).toFixed(0)}% match). Fonts or layout may differ from the original.`}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Logo Analysis */}
+                                            <div className="flex items-start gap-3">
+                                                <div className={`mt-1 w-2 h-2 rounded-full ${referenceData?.details?.logoMatched ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                                <div>
+                                                    <span className="font-semibold text-sm block">Brand Identity</span>
+                                                    <p className="text-sm text-text-muted">
+                                                        {referenceData?.details?.logoMatched
+                                                            ? `Brand logo/name verified (${referenceData.details.logoMethod === 'TEXT_BRAND_MATCH' ? 'Text-based verification' : 'Visual logo match'}).`
+                                                            : `Brand identity verification failed. The expected logo or brand name was not detected.`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Failure Details (if any) */}
+                                        {result.flags_json && Object.keys(result.flags_json).length > 0 && (
+                                            <div className="p-4 bg-red-50 border-t border-red-100">
+                                                <h4 className="text-xs font-bold text-red-800 uppercase mb-2">Detected Anomalies</h4>
+                                                <ul className="list-disc list-inside space-y-1">
+                                                    {Object.entries(result.flags_json).map(([key, value]) => (
+                                                        <li key={key} className="text-sm text-red-700">
+                                                            <span className="font-medium">{key}:</span> {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-
-                                {/* Failure Details */}
-                                {result.flags_json && Object.keys(result.flags_json).length > 0 && (
-                                    <div>
-                                        <h3 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Failure Details</h3>
-                                        <div className="bg-background rounded-lg p-4 border border-border">
-                                            <ul className="list-disc list-inside space-y-1">
-                                                {Object.entries(result.flags_json).map(([key, value]) => (
-                                                    <li key={key}>
-                                                        <span className="font-medium">{key}:</span> {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </div>
 

@@ -98,7 +98,7 @@ const ScanResult = () => {
                                     <div className="text-sm font-medium text-text-muted text-center">Reference: {referenceData.referenceName || 'Official Product'}</div>
 
                                     {/* DEBUG INFO */}
-                                    <div className="text-xs text-red-500 break-all hidden">
+                                    <div className="text-xs text-red-500 break-all">
                                         DEBUG: {JSON.stringify(referenceData)}
                                     </div>
 

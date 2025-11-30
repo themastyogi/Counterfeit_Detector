@@ -165,7 +165,7 @@ function ReferenceManagement() {
                                         <option value="">-- Select a product --</option>
                                         {products.map(product => (
                                             <option key={product._id} value={product._id}>
-                                                {product.product_name} - {product.brand}
+                                                {product.product_name} ({product.sku}) - {product.brand}
                                             </option>
                                         ))}
                                     </select>

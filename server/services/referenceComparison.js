@@ -182,11 +182,22 @@ function compareWithReference(visionResult, referenceFingerprint) {
     result.textSimilarity = textSim;
 
     // Calculate overall similarity (weighted average)
-    // Logo is most important (50%), color (30%), text (20%)
+    // Default weights: Logo (50%), Color (30%), Text (20%)
+    let wLogo = 0.5;
+    let wColor = 0.3;
+    let wText = 0.2;
+
+    // Dynamic weighting: If reference has no logos, redistribute logo weight
+    if (!referenceFingerprint.logos || referenceFingerprint.logos.length === 0) {
+        wLogo = 0;
+        wColor = 0.4; // Increase color weight
+        wText = 0.6;  // Increase text weight significantly as it's a strong indicator
+    }
+
     result.overallSimilarity =
-        (result.logoSimilarity * 0.5) +
-        (result.colorSimilarity * 0.3) +
-        (result.textSimilarity * 0.2);
+        (result.logoSimilarity * wLogo) +
+        (result.colorSimilarity * wColor) +
+        (result.textSimilarity * wText);
 
     // Determine if it's a match
     if (result.overallSimilarity >= 75) {

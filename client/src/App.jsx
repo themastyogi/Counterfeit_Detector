@@ -20,6 +20,7 @@ import TermsOfService from './pages/TermsOfService';
 import UserProfile from './pages/UserProfile';
 import FixRole from './pages/FixRole';
 import TestRulesManagement from './pages/TestRulesManagement';
+import ViewSavedRules from './pages/ViewSavedRules';
 
 function App() {
   return (
@@ -103,6 +104,14 @@ function App() {
             element={
               <ProtectedRoute adminOnly>
                 <TestRulesManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="view-saved-rules"
+            element={
+              <ProtectedRoute adminOnly>
+                <ViewSavedRules />
               </ProtectedRoute>
             }
           />

@@ -132,11 +132,11 @@ function logoContainsBrand(logos, brandName, minScore = 0.7) {
  * @param {Array} referenceImages - Array of reference image paths
  * @returns {number} Similarity score 0-1
  */
-async function computeImageSimilarity(scanImages, referenceImages, visionResult, referenceFingerprint) {
+async function computeImageSimilarity(scanImages, referenceImages, visionResult, referenceFingerprint, brandName) {
     // If we have vision result and reference fingerprint, use the advanced comparison
     if (visionResult && referenceFingerprint) {
         const { compareWithReference } = require('./referenceComparison');
-        const comparison = compareWithReference(visionResult, referenceFingerprint);
+        const comparison = compareWithReference(visionResult, referenceFingerprint, brandName);
         // Normalize overall similarity to 0-1 for backward compatibility where number is expected
         comparison.score = comparison.overallSimilarity / 100;
         return comparison;
@@ -254,7 +254,8 @@ async function evaluateReferenceMode(product, scanImages, visionResult, referenc
                 scanImages,
                 [reference.reference_image_path],
                 visionResult,
-                reference.fingerprint
+                reference.fingerprint,
+                product.brand // Pass brand name for text-based logo matching
             );
 
             // Handle both object and legacy number return

@@ -77,48 +77,64 @@ function toRgb(input) {
 /**
  * Calculate logo similarity
  */
-function calculateLogoSimilarity(scannedLogos, referenceLogos) {
-    if (!scannedLogos || !referenceLogos || scannedLogos.length === 0 || referenceLogos.length === 0) {
-        return { similarity: 0, matched: false };
-    }
+function calculateLogoSimilarity(scannedLogos, referenceLogos, brandName, scannedText) {
+    // 1. Try Visual Logo Matching (Google Vision)
+    if (scannedLogos && referenceLogos && scannedLogos.length > 0 && referenceLogos.length > 0) {
+        // Check if same logos are detected
+        const scannedBrands = scannedLogos.map(l => l.description.toLowerCase());
+        const referenceBrands = referenceLogos.map(l => l.description.toLowerCase());
 
-    // Check if same logos are detected
-    const scannedBrands = scannedLogos.map(l => l.description.toLowerCase());
-    const referenceBrands = referenceLogos.map(l => l.description.toLowerCase());
-
-    const matchedBrands = scannedBrands.filter(brand =>
-        referenceBrands.some(refBrand =>
-            brand.includes(refBrand) || refBrand.includes(brand)
-        )
-    );
-
-    if (matchedBrands.length === 0) {
-        return { similarity: 0, matched: false };
-    }
-
-    // Calculate average confidence similarity
-    let totalSimilarity = 0;
-    let matches = 0;
-
-    for (const scannedLogo of scannedLogos) {
-        const matchingRef = referenceLogos.find(refLogo =>
-            scannedLogo.description.toLowerCase().includes(refLogo.description.toLowerCase()) ||
-            refLogo.description.toLowerCase().includes(scannedLogo.description.toLowerCase())
+        const matchedBrands = scannedBrands.filter(brand =>
+            referenceBrands.some(refBrand =>
+                brand.includes(refBrand) || refBrand.includes(brand)
+            )
         );
 
-        if (matchingRef) {
-            // Compare confidence scores
-            const confidenceDiff = Math.abs(scannedLogo.score - matchingRef.score);
-            totalSimilarity += (1 - confidenceDiff) * 100;
-            matches++;
+        if (matchedBrands.length > 0) {
+            // Calculate average confidence similarity
+            let totalSimilarity = 0;
+            let matches = 0;
+
+            for (const scannedLogo of scannedLogos) {
+                const matchingRef = referenceLogos.find(refLogo =>
+                    scannedLogo.description.toLowerCase().includes(refLogo.description.toLowerCase()) ||
+                    refLogo.description.toLowerCase().includes(scannedLogo.description.toLowerCase())
+                );
+
+                if (matchingRef) {
+                    const confidenceDiff = Math.abs(scannedLogo.score - matchingRef.score);
+                    totalSimilarity += (1 - confidenceDiff) * 100;
+                    matches++;
+                }
+            }
+
+            return {
+                similarity: matches > 0 ? totalSimilarity / matches : 0,
+                matched: true,
+                matchedBrands,
+                method: 'VISUAL_LOGO'
+            };
         }
     }
 
-    return {
-        similarity: matches > 0 ? totalSimilarity / matches : 0,
-        matched: true,
-        matchedBrands
-    };
+    // 2. Fallback: Text-based Brand Matching
+    // If visual logo failed, check if the Brand Name appears in the text
+    if (brandName && scannedText) {
+        const textLower = scannedText.toLowerCase();
+        const brandLower = brandName.toLowerCase();
+
+        // Check for exact phrase or significant parts
+        if (textLower.includes(brandLower)) {
+            return {
+                similarity: 100, // High confidence if brand name is explicitly written
+                matched: true,
+                matchedBrands: [brandName],
+                method: 'TEXT_BRAND_MATCH'
+            };
+        }
+    }
+
+    return { similarity: 0, matched: false, method: 'NONE' };
 }
 
 /**
@@ -147,7 +163,7 @@ function calculateTextSimilarity(scannedText, referenceText) {
 /**
  * Main comparison function
  */
-function compareWithReference(visionResult, referenceFingerprint) {
+function compareWithReference(visionResult, referenceFingerprint, brandName) {
     const result = {
         overallSimilarity: 0,
         colorSimilarity: 0,
@@ -165,14 +181,17 @@ function compareWithReference(visionResult, referenceFingerprint) {
     );
     result.colorSimilarity = colorSim;
 
-    // Compare logos
+    // Compare logos (with text fallback)
     const logoComparison = calculateLogoSimilarity(
         visionResult.logos || [],
-        referenceFingerprint.logos || []
+        referenceFingerprint.logos || [],
+        brandName,
+        visionResult.textDetection?.text || ''
     );
     result.logoSimilarity = logoComparison.similarity;
     result.details.logoMatched = logoComparison.matched;
     result.details.matchedBrands = logoComparison.matchedBrands;
+    result.details.logoMethod = logoComparison.method;
 
     // Compare text
     const textSim = calculateTextSimilarity(

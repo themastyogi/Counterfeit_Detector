@@ -134,7 +134,14 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                     if (reference) {
                         console.log('🔍 Reference found:', reference._id);
                         console.log('🖼️ Reference Image Path (raw):', reference.reference_image_path);
-                        const normalizedPath = reference.reference_image_path ? `/${reference.reference_image_path.replace(/\\/g, '/')}` : null;
+
+                        // Don't add / prefix to Cloudinary URLs
+                        const normalizedPath = reference.reference_image_path
+                            ? (reference.reference_image_path.startsWith('http')
+                                ? reference.reference_image_path
+                                : `/${reference.reference_image_path.replace(/\\/g, '/')}`)
+                            : null;
+
                         console.log('🖼️ Reference Image Path (normalized):', normalizedPath);
 
                         referenceComparison = {

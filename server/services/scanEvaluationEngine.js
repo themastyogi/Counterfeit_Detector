@@ -132,17 +132,16 @@ function logoContainsBrand(logos, brandName, minScore = 0.7) {
  * @param {Array} referenceImages - Array of reference image paths
  * @returns {number} Similarity score 0-1
  */
-async function computeImageSimilarity(scanImages, referenceImages) {
-    // TODO: Implement actual image similarity using:
-    // - Image hashing (pHash, dHash)
-    // - Feature extraction (SIFT, ORB)
-    // - Deep learning embeddings
+async function computeImageSimilarity(scanImages, referenceImages, visionResult, referenceFingerprint) {
+    // If we have vision result and reference fingerprint, use the advanced comparison
+    if (visionResult && referenceFingerprint) {
+        const { compareWithReference } = require('./referenceComparison');
+        const comparison = compareWithReference(visionResult, referenceFingerprint);
+        return comparison.overallSimilarity / 100; // Convert 0-100 to 0-1
+    }
 
-    // For now, use the existing reference comparison service
-    const { compareWithReference } = require('./referenceComparison');
-
-    // This is a placeholder - actual implementation would need image data
-    return 0.5; // Default medium similarity
+    // Fallback if no fingerprint available (should not happen in production)
+    return 0.5;
 }
 
 /**
@@ -244,8 +243,13 @@ async function evaluateReferenceMode(product, scanImages, visionResult, referenc
             return;
         }
 
-        // Compute similarity (placeholder)
-        const similarity = await computeImageSimilarity(scanImages, [reference.reference_image_path]);
+        // Compute similarity using actual fingerprint comparison
+        const similarity = await computeImageSimilarity(
+            scanImages,
+            [reference.reference_image_path],
+            visionResult,
+            reference.fingerprint
+        );
 
         result.debug_info.similarity = similarity;
 

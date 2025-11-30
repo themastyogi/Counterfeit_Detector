@@ -10,19 +10,30 @@ function calculateColorSimilarity(colors1, colors2) {
         return 0;
     }
 
-    // Compare dominant colors
-    let totalSimilarity = 0;
-    let comparisons = 0;
+    let totalScore = 0;
+    let totalWeight = 0;
 
-    for (const color1 of colors1.slice(0, 3)) { // Top 3 colors
-        for (const color2 of colors2.slice(0, 3)) {
-            const similarity = compareColors(color1.color, color2.color);
-            totalSimilarity += similarity * Math.min(color1.pixelFraction, color2.pixelFraction);
-            comparisons++;
+    // For each color in the first image (scanned)
+    for (const c1 of colors1.slice(0, 5)) { // Check top 5 colors
+        let bestMatchScore = 0;
+
+        // Find the best matching color in the second image (reference)
+        for (const c2 of colors2.slice(0, 5)) {
+            const similarity = compareColors(c1.color, c2.color);
+            if (similarity > bestMatchScore) {
+                bestMatchScore = similarity;
+            }
         }
+
+        // Add to total score, weighted by the pixel fraction of the scanned color
+        // This ensures that prominent colors matter more
+        const weight = c1.pixelFraction || 0.1;
+        totalScore += bestMatchScore * weight;
+        totalWeight += weight;
     }
 
-    return comparisons > 0 ? (totalSimilarity / comparisons) * 100 : 0;
+    // Normalize result to 0-100
+    return totalWeight > 0 ? (totalScore / totalWeight) * 100 : 0;
 }
 
 /**

@@ -94,12 +94,11 @@ const ScanResult = () => {
                                     </div>
                                 </div>
 
-                                {/* Reference Image */}
                                 <div className="space-y-2">
                                     <div className="text-sm font-medium text-text-muted text-center">Reference: {referenceData.referenceName || 'Official Product'}</div>
                                     <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-border shadow-sm relative">
                                         {referenceData.referenceImage ? (
-                                            <img src={referenceData.referenceImage} alt="Reference" className="w-full h-full object-cover" />
+                                            <img src={referenceData.referenceImage.replace(/\\/g, '/')} alt="Reference" className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="flex items-center justify-center h-full text-text-muted">Image not available</div>
                                         )}

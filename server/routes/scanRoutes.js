@@ -132,6 +132,9 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                     const reference = await ProductReference.findById(reference_id).populate('product_id');
 
                     if (reference) {
+                        console.log('🔍 Reference found:', reference._id);
+                        console.log('🖼️ Reference Image Path:', reference.reference_image_path);
+
                         referenceComparison = {
                             overallSimilarity: evaluation.debug_info.similarity,
                             referenceId: reference._id,

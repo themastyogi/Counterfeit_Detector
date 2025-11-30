@@ -90,7 +90,7 @@ const ScanResult = () => {
                                 <div className="space-y-2">
                                     <div className="text-sm font-medium text-text-muted text-center">Scanned Image</div>
                                     <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-border shadow-sm">
-                                        <img src={result.image_url || '/placeholder-image.jpg'} alt="Scanned" className="w-full h-full object-cover" />
+                                        <img src={result.image_path || '/placeholder-image.jpg'} alt="Scanned" className="w-full h-full object-cover" />
                                     </div>
                                 </div>
 

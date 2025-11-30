@@ -168,9 +168,9 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                             referenceName: reference.product_id?.product_name,
                             referenceImage: normalizedPath,
                             details: {
-                                colorMatch: evaluation.debug_info.similarity,
-                                logoMatch: evaluation.debug_info.similarity,
-                                textMatch: evaluation.debug_info.similarity
+                                colorMatch: evaluation.debug_info.comparison_details?.colorSimilarity / 100 || 0,
+                                logoMatch: evaluation.debug_info.comparison_details?.logoSimilarity / 100 || 0,
+                                textMatch: evaluation.debug_info.comparison_details?.textSimilarity / 100 || 0
                             }
                         };
                     }

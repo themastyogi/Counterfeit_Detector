@@ -137,11 +137,13 @@ async function computeImageSimilarity(scanImages, referenceImages, visionResult,
     if (visionResult && referenceFingerprint) {
         const { compareWithReference } = require('./referenceComparison');
         const comparison = compareWithReference(visionResult, referenceFingerprint);
-        return comparison.overallSimilarity / 100; // Convert 0-100 to 0-1
+        // Normalize overall similarity to 0-1 for backward compatibility where number is expected
+        comparison.score = comparison.overallSimilarity / 100;
+        return comparison;
     }
 
-    // Fallback if no fingerprint available (should not happen in production)
-    return 0.5;
+    // Fallback if no fingerprint available
+    return { score: 0.5, overallSimilarity: 50, details: {} };
 }
 
 /**
@@ -245,13 +247,23 @@ async function evaluateReferenceMode(product, scanImages, visionResult, referenc
 
         // Compute similarity using actual fingerprint comparison
         let similarity = 0;
+        let comparisonDetails = {};
+
         try {
-            similarity = await computeImageSimilarity(
+            const comparison = await computeImageSimilarity(
                 scanImages,
                 [reference.reference_image_path],
                 visionResult,
                 reference.fingerprint
             );
+
+            // Handle both object and legacy number return
+            if (typeof comparison === 'object') {
+                similarity = comparison.score;
+                comparisonDetails = comparison;
+            } else {
+                similarity = comparison;
+            }
         } catch (simError) {
             console.error('❌ Error computing similarity:', simError);
             // Fallback to 0 to avoid crashing the entire scan
@@ -259,6 +271,7 @@ async function evaluateReferenceMode(product, scanImages, visionResult, referenc
         }
 
         result.debug_info.similarity = similarity;
+        result.debug_info.comparison_details = comparisonDetails;
 
         if (similarity >= 0.8) {
             // High similarity - likely genuine

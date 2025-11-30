@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Database, CheckCircle, XCircle, ArrowLeft, Settings } from 'lucide-react';
+import { Database, CheckCircle, XCircle, ArrowLeft, Settings, Trash2, Edit, Code } from 'lucide-react';
 
 const ViewSavedRules = () => {
     const { token, isAdmin, isTenantAdmin } = useAuth();
@@ -9,10 +9,40 @@ const ViewSavedRules = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedProduct, setExpandedProduct] = useState(null);
+    const [message, setMessage] = useState('');
 
     useEffect(() => {
         fetchProducts();
     }, []);
+
+    const handleDeleteRule = async (productId, productName) => {
+        if (!confirm(`Are you sure you want to delete all rules for "${productName}"?`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/products/${productId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ metadata_json: {} })
+            });
+
+            if (res.ok) {
+                setMessage('✅ Rules deleted successfully!');
+                fetchProducts();
+            } else {
+                setMessage('❌ Failed to delete rules');
+            }
+        } catch (err) {
+            setMessage('❌ Error deleting rules');
+            console.error(err);
+        } finally {
+            setTimeout(() => setMessage(''), 3000);
+        }
+    };
 
     const fetchProducts = async () => {
         try {
@@ -91,6 +121,13 @@ const ViewSavedRules = () => {
                 </div>
             </div>
 
+            {/* Message Notification */}
+            {message && (
+                <div className={`mb-4 p-4 rounded-lg ${message.includes('✅') ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                    {message}
+                </div>
+            )}
+
             {/* Statistics */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="card p-4 bg-gradient-to-br from-blue-50 to-blue-100">
@@ -149,27 +186,89 @@ const ViewSavedRules = () => {
 
                                 {expandedProduct === product._id && (
                                     <div className="border-t border-border p-6 bg-gray-50">
+                                        {/* Rule Header with Code and Actions */}
+                                        <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
+                                            <div className="flex items-center gap-3">
+                                                <Code className="text-primary" size={20} />
+                                                <div>
+                                                    <div className="text-sm text-text-muted">Rule Code (for tracing)</div>
+                                                    <div className="font-mono text-sm font-bold text-primary">
+                                                        RULE-{product._id.substring(0, 8).toUpperCase()}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => {
+                                                        navigate('/test-rules');
+                                                        // Could add logic to auto-select this product
+                                                    }}
+                                                    className="btn btn-sm btn-outline flex items-center gap-2"
+                                                >
+                                                    <Edit size={16} />
+                                                    Edit Rules
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteRule(product._id, product.product_name)}
+                                                    className="btn btn-sm bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 flex items-center gap-2"
+                                                >
+                                                    <Trash2 size={16} />
+                                                    Delete Rules
+                                                </button>
+                                            </div>
+                                        </div>
+
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {/* Rules */}
+                                            {/* Rules - User Friendly Display */}
                                             <div>
-                                                <h3 className="font-bold text-primary mb-3">Validation Rules</h3>
-                                                <div className="space-y-2 bg-white p-4 rounded-lg border border-border">
-                                                    <div className="flex justify-between text-sm">
-                                                        <span className="text-text-muted">Logo Detection:</span>
-                                                        <span className="font-medium">{product.metadata_json.rules.use_logo_check ? 'Enabled' : 'Disabled'}</span>
+                                                <h3 className="font-bold text-primary mb-3 flex items-center gap-2">
+                                                    <CheckCircle size={18} className="text-green-600" />
+                                                    Validation Rules
+                                                </h3>
+                                                <div className="space-y-3 bg-white p-4 rounded-lg border border-border">
+                                                    {/* Logo Detection */}
+                                                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                                        <span className="text-sm font-medium">Logo Detection</span>
+                                                        <span className={`badge ${product.metadata_json.rules.use_logo_check ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                                                            {product.metadata_json.rules.use_logo_check ? '✓ Enabled' : '✗ Disabled'}
+                                                        </span>
                                                     </div>
-                                                    <div className="flex justify-between text-sm">
-                                                        <span className="text-text-muted">Generic Labels:</span>
-                                                        <span className="font-medium">{product.metadata_json.rules.use_generic_labels ? 'Enabled' : 'Disabled'}</span>
+
+                                                    {/* Generic Labels */}
+                                                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                                        <span className="text-sm font-medium">Generic Category Labels</span>
+                                                        <span className={`badge ${product.metadata_json.rules.use_generic_labels ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                                                            {product.metadata_json.rules.use_generic_labels ? '✓ Enabled' : '✗ Disabled'}
+                                                        </span>
                                                     </div>
-                                                    {product.metadata_json.rules.required_identifiers && (
-                                                        <div className="text-sm pt-2 border-t">
-                                                            <span className="text-text-muted">Required Identifiers:</span>
-                                                            <div className="mt-1 flex flex-wrap gap-1">
+
+                                                    {/* Required Identifiers */}
+                                                    {product.metadata_json.rules.required_identifiers && product.metadata_json.rules.required_identifiers.length > 0 && (
+                                                        <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                                                            <div className="text-sm font-medium text-blue-900 mb-2">Required Identifiers</div>
+                                                            <div className="flex flex-wrap gap-2">
                                                                 {product.metadata_json.rules.required_identifiers.map((id, idx) => (
-                                                                    <span key={idx} className="badge bg-blue-100 text-blue-800 text-xs">
-                                                                        {id}
+                                                                    <span key={idx} className="badge bg-blue-600 text-white text-xs px-3 py-1">
+                                                                        {id.toUpperCase()}
                                                                     </span>
+                                                                ))}
+                                                            </div>
+                                                            <div className="text-xs text-blue-700 mt-2">
+                                                                These identifiers must be present in the scanned image
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Identifier Patterns */}
+                                                    {product.metadata_json.rules.identifier_patterns && Object.keys(product.metadata_json.rules.identifier_patterns).length > 0 && (
+                                                        <div className="p-3 bg-purple-50 border border-purple-200 rounded">
+                                                            <div className="text-sm font-medium text-purple-900 mb-2">Validation Patterns</div>
+                                                            <div className="space-y-1">
+                                                                {Object.entries(product.metadata_json.rules.identifier_patterns).map(([key, pattern]) => (
+                                                                    <div key={key} className="text-xs">
+                                                                        <span className="font-medium text-purple-800">{key}:</span>
+                                                                        <code className="ml-2 text-purple-600 bg-white px-2 py-0.5 rounded">{pattern}</code>
+                                                                    </div>
                                                                 ))}
                                                             </div>
                                                         </div>
@@ -177,30 +276,52 @@ const ViewSavedRules = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Weights */}
+                                            {/* Weights - User Friendly Display */}
                                             <div>
-                                                <h3 className="font-bold text-primary mb-3">Violation Weights</h3>
-                                                <div className="space-y-2 bg-white p-4 rounded-lg border border-border max-h-48 overflow-y-auto">
+                                                <h3 className="font-bold text-primary mb-3 flex items-center gap-2">
+                                                    <Database size={18} className="text-orange-600" />
+                                                    Risk Weights
+                                                </h3>
+                                                <div className="space-y-2 bg-white p-4 rounded-lg border border-border max-h-96 overflow-y-auto">
                                                     {product.metadata_json.weights && Object.keys(product.metadata_json.weights).length > 0 ? (
-                                                        Object.entries(product.metadata_json.weights).map(([key, value]) => (
-                                                            <div key={key} className="flex justify-between text-sm">
-                                                                <span className="text-text-muted">{key.replace(/_/g, ' ')}:</span>
-                                                                <span className="font-medium text-primary">{value}</span>
-                                                            </div>
-                                                        ))
+                                                        Object.entries(product.metadata_json.weights)
+                                                            .sort(([, a], [, b]) => b - a) // Sort by weight descending
+                                                            .map(([key, value]) => {
+                                                                const severity = value >= 50 ? 'high' : value >= 30 ? 'medium' : 'low';
+                                                                const colorClass = severity === 'high' ? 'text-red-600 bg-red-50' :
+                                                                    severity === 'medium' ? 'text-orange-600 bg-orange-50' :
+                                                                        'text-yellow-600 bg-yellow-50';
+                                                                return (
+                                                                    <div key={key} className={`flex justify-between items-center p-2 rounded ${colorClass}`}>
+                                                                        <span className="text-sm font-medium capitalize">
+                                                                            {key.replace(/_/g, ' ')}
+                                                                        </span>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="w-24 bg-gray-200 rounded-full h-2">
+                                                                                <div
+                                                                                    className={`h-2 rounded-full ${severity === 'high' ? 'bg-red-600' : severity === 'medium' ? 'bg-orange-600' : 'bg-yellow-600'}`}
+                                                                                    style={{ width: `${value}%` }}
+                                                                                ></div>
+                                                                            </div>
+                                                                            <span className="font-bold text-sm w-8 text-right">{value}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })
                                                     ) : (
-                                                        <div className="text-sm text-text-muted">No weights configured</div>
+                                                        <div className="text-sm text-text-muted text-center py-4">No weights configured</div>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* Raw JSON */}
-                                        <details className="mt-4">
-                                            <summary className="cursor-pointer text-sm font-medium text-primary hover:text-blue-700">
-                                                View Raw JSON
+                                        {/* Advanced: Raw JSON (Collapsed by default) */}
+                                        <details className="mt-6">
+                                            <summary className="cursor-pointer text-sm font-medium text-gray-600 hover:text-primary flex items-center gap-2">
+                                                <Code size={16} />
+                                                View Technical Details (Raw JSON)
                                             </summary>
-                                            <pre className="mt-2 p-4 bg-gray-900 text-green-400 rounded-lg text-xs overflow-x-auto">
+                                            <pre className="mt-3 p-4 bg-gray-900 text-green-400 rounded-lg text-xs overflow-x-auto border border-gray-700">
                                                 {JSON.stringify(product.metadata_json, null, 2)}
                                             </pre>
                                         </details>

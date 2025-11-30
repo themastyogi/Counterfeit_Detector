@@ -67,7 +67,9 @@ router.get('/product/:productId', verifyToken, async (req, res) => {
         const references = await ProductReference.find({
             product_id: req.params.productId,
             is_active: true
-        }).populate('uploaded_by', 'name email');
+        })
+            .populate('uploaded_by', 'name email')
+            .populate('product_id', 'product_name brand category sku');
         res.json(references);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });

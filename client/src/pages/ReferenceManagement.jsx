@@ -285,9 +285,17 @@ function ReferenceManagement() {
                                                     </p>
                                                 )}
                                                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
-                                                    <span className="text-xs text-text-muted">
-                                                        {new Date(ref.createdAt).toLocaleDateString()}
-                                                    </span>
+                                                    <div className="text-xs text-text-muted">
+                                                        <div className="font-medium">
+                                                            {ref.uploaded_by?.name || 'Unknown User'}
+                                                        </div>
+                                                        <div className="text-xs">
+                                                            {new Date(ref.createdAt).toLocaleString('en-IN', {
+                                                                dateStyle: 'medium',
+                                                                timeStyle: 'short'
+                                                            })}
+                                                        </div>
+                                                    </div>
                                                     <button
                                                         onClick={() => handleDelete(ref._id)}
                                                         className="text-danger hover:bg-red-50 p-2 rounded-full transition-colors"

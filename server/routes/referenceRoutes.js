@@ -39,8 +39,7 @@ router.post('/upload', verifyToken, isTenantAdmin, upload.single('image'), async
             reference_image_path: image_path,
             fingerprint,
             notes,
-            created_by: req.user.id,
-            tenant_id: req.user.tenant_id
+            uploaded_by: req.user.id
         });
 
         console.log('💾 Saving reference to database...');
@@ -68,7 +67,7 @@ router.get('/product/:productId', verifyToken, async (req, res) => {
         const references = await ProductReference.find({
             product_id: req.params.productId,
             is_active: true
-        });
+        }).populate('uploaded_by', 'name email');
         res.json(references);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });

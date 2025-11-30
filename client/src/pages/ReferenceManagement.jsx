@@ -271,7 +271,9 @@ function ReferenceManagement() {
                                         <div key={ref._id} className="group bg-white rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow">
                                             <div className="aspect-video bg-gray-100 relative overflow-hidden">
                                                 <img
-                                                    src={`/${ref.reference_image_path.replace(/\\/g, '/')}`}
+                                                    src={ref.reference_image_path.startsWith('http')
+                                                        ? ref.reference_image_path
+                                                        : `/${ref.reference_image_path.replace(/\\/g, '/')}`}
                                                     alt="Reference"
                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                 />

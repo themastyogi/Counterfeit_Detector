@@ -104,7 +104,13 @@ const ScanResult = () => {
 
                                     <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-border shadow-sm relative">
                                         {referenceData.referenceImage ? (
-                                            <img src={referenceData.referenceImage.replace(/\\/g, '/')} alt="Reference" className="w-full h-full object-cover" />
+                                            <img
+                                                src={referenceData.referenceImage.startsWith('http')
+                                                    ? referenceData.referenceImage
+                                                    : referenceData.referenceImage.replace(/\\/g, '/')}
+                                                alt="Reference"
+                                                className="w-full h-full object-cover"
+                                            />
                                         ) : (
                                             <div className="flex items-center justify-center h-full text-text-muted">Image not available</div>
                                         )}

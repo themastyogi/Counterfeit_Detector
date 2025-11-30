@@ -96,6 +96,12 @@ const ScanResult = () => {
 
                                 <div className="space-y-2">
                                     <div className="text-sm font-medium text-text-muted text-center">Reference: {referenceData.referenceName || 'Official Product'}</div>
+
+                                    {/* DEBUG INFO */}
+                                    <div className="text-xs text-red-500 break-all hidden">
+                                        DEBUG: {JSON.stringify(referenceData)}
+                                    </div>
+
                                     <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-border shadow-sm relative">
                                         {referenceData.referenceImage ? (
                                             <img src={referenceData.referenceImage.replace(/\\/g, '/')} alt="Reference" className="w-full h-full object-cover" />

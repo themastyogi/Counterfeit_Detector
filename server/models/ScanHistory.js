@@ -73,7 +73,10 @@ const scanHistorySchema = new mongoose.Schema({
     reference_comparison: {
         similarity: Number,
         referenceId: mongoose.Schema.Types.ObjectId,
-        confidence: String
+        confidence: String,
+        referenceName: String,
+        referenceImage: String,
+        details: Object
     }
 }, {
     timestamps: true

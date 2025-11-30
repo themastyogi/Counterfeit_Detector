@@ -63,8 +63,13 @@ const analyzeImage = async (imagePath) => {
         // If Cloud Vision is configured, use it
         if (visionClient) {
             console.log('🔵 Using REAL Google Cloud Vision API');
+            // Check if imagePath is a URL or local file
+            const imageSource = imagePath.startsWith('http')
+                ? { source: { imageUri: imagePath } }
+                : { source: { filename: imagePath } };
+
             const [result] = await visionClient.annotateImage({
-                image: { source: { filename: imagePath } },
+                image: imageSource,
                 features: [
                     { type: 'LABEL_DETECTION', maxResults: 10 },
                     { type: 'LOGO_DETECTION', maxResults: 5 },

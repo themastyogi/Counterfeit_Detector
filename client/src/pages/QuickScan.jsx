@@ -429,7 +429,7 @@ const QuickScan = () => {
                 </div>
             )}
         </div>
-        </div >
+        </div>
     );
 };
 

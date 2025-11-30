@@ -119,8 +119,8 @@ const ScanResult = () => {
                             <div className="grid grid-cols-3 gap-4 mt-6">
                                 <div className="bg-white p-3 rounded-lg border border-border text-center">
                                     <div className="text-xs text-text-muted uppercase tracking-wider mb-1">Overall Match</div>
-                                    <div className={`text-xl font-bold ${referenceData.similarity > 70 ? 'text-green-600' : 'text-amber-600'}`}>
-                                        {referenceData.similarity?.toFixed(0)}%
+                                    <div className={`text-xl font-bold ${(referenceData.similarity * 100) > 70 ? 'text-green-600' : 'text-amber-600'}`}>
+                                        {(referenceData.similarity * 100)?.toFixed(0)}%
                                     </div>
                                 </div>
                                 <div className="bg-white p-3 rounded-lg border border-border text-center">

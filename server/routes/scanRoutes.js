@@ -133,7 +133,9 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
 
                     if (reference) {
                         console.log('🔍 Reference found:', reference._id);
-                        console.log('🖼️ Reference Image Path:', reference.reference_image_path);
+                        console.log('🖼️ Reference Image Path (raw):', reference.reference_image_path);
+                        const normalizedPath = reference.reference_image_path ? `/${reference.reference_image_path.replace(/\\/g, '/')}` : null;
+                        console.log('🖼️ Reference Image Path (normalized):', normalizedPath);
 
                         referenceComparison = {
                             overallSimilarity: evaluation.debug_info.similarity,
@@ -141,7 +143,7 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                             confidence: evaluation.debug_info.similarity > 0.8 ? 'HIGH' :
                                 evaluation.debug_info.similarity > 0.5 ? 'MEDIUM' : 'LOW',
                             referenceName: reference.product_id?.product_name,
-                            referenceImage: reference.reference_image_path ? `/${reference.reference_image_path.replace(/\\/g, '/')}` : null,
+                            referenceImage: normalizedPath,
                             details: {
                                 colorMatch: evaluation.debug_info.similarity,
                                 logoMatch: evaluation.debug_info.similarity,

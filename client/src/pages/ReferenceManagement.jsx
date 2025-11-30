@@ -46,14 +46,20 @@ function ReferenceManagement() {
     };
 
     const handleImageChange = (e) => {
+        console.log('📸 Image change event triggered');
+        console.log('Files:', e.target.files);
         const file = e.target.files[0];
         if (file) {
+            console.log('✅ File selected:', file.name, file.size);
             setImageFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
+                console.log('✅ Image preview loaded');
                 setImagePreview(reader.result);
             };
             reader.readAsDataURL(file);
+        } else {
+            console.log('❌ No file selected');
         }
     };
 

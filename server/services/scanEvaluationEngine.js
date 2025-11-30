@@ -271,61 +271,43 @@ async function evaluateReferenceMode(product, scanImages, visionResult, referenc
             similarity = 0;
         }
 
-        result.debug_info.similarity = similarity;
-        result.debug_info.comparison_details = comparisonDetails;
+    });
+} else if (similarity >= 0.70) {
+    // High-Medium similarity
+    result.violations.push({
+        code: 'GOOD_SIMILARITY',
+        message: `Good similarity to reference (${(similarity * 100).toFixed(0)}%)`,
+        weight: 10 // Slight risk
+    });
+} else if (similarity < 0.55) {
+    // Low similarity - suspicious
+    const weight = weights.low_similarity || 60; // Increased from 50
+    result.violations.push({
+        code: 'LOW_SIMILARITY',
+        message: `Low similarity to reference (${(similarity * 100).toFixed(0)}%)`,
+        weight
+    });
+} else {
+    // Medium similarity (0.55 - 0.70)
+    const weight = weights.medium_similarity || 35; // Increased from 20
+    result.violations.push({
+        code: 'MEDIUM_SIMILARITY',
+        message: `Medium similarity to reference (${(similarity * 100).toFixed(0)}%)`,
+        weight
+    });
+}
 
-        // Check for "Photocopy" pattern: High text match but very low color match
-        if (comparisonDetails.textSimilarity > 70 && comparisonDetails.colorSimilarity < 20) {
-            result.violations.push({
-                code: 'POTENTIAL_PHOTOCOPY',
-                message: 'High text match with low color match - potential photocopy or B&W copy',
-                weight: 60 // High risk
-            });
-        }
-
-        if (similarity >= 0.85) {
-            // Very High similarity - likely genuine
-            result.violations.push({
-                code: 'HIGH_SIMILARITY',
-                message: `High similarity to reference (${(similarity * 100).toFixed(0)}%)`,
-                weight: 0
-            });
-        } else if (similarity >= 0.70) {
-            // High-Medium similarity
-            result.violations.push({
-                code: 'GOOD_SIMILARITY',
-                message: `Good similarity to reference (${(similarity * 100).toFixed(0)}%)`,
-                weight: 10 // Slight risk
-            });
-        } else if (similarity < 0.55) {
-            // Low similarity - suspicious
-            const weight = weights.low_similarity || 60; // Increased from 50
-            result.violations.push({
-                code: 'LOW_SIMILARITY',
-                message: `Low similarity to reference (${(similarity * 100).toFixed(0)}%)`,
-                weight
-            });
-        } else {
-            // Medium similarity (0.55 - 0.70)
-            const weight = weights.medium_similarity || 35; // Increased from 20
-            result.violations.push({
-                code: 'MEDIUM_SIMILARITY',
-                message: `Medium similarity to reference (${(similarity * 100).toFixed(0)}%)`,
-                weight
-            });
-        }
-
-        // Still run secondary checks
-        runGenericChecks(product, visionResult, result, weights);
+// Still run secondary checks
+runGenericChecks(product, visionResult, result, weights);
 
     } catch (error) {
-        console.error('Reference evaluation error:', error);
-        result.violations.push({
-            code: 'REFERENCE_ERROR',
-            message: 'Error during reference comparison',
-            weight: 0
-        });
-    }
+    console.error('Reference evaluation error:', error);
+    result.violations.push({
+        code: 'REFERENCE_ERROR',
+        message: 'Error during reference comparison',
+        weight: 0
+    });
+}
 }
 
 /**

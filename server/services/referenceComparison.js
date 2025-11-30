@@ -10,30 +10,33 @@ function calculateColorSimilarity(colors1, colors2) {
         return 0;
     }
 
-    let totalScore = 0;
-    let totalWeight = 0;
+    // Helper to calculate one-way similarity
+    const getOneWayScore = (sourceColors, targetColors) => {
+        let totalScore = 0;
+        let totalWeight = 0;
 
-    // For each color in the first image (scanned)
-    for (const c1 of colors1.slice(0, 5)) { // Check top 5 colors
-        let bestMatchScore = 0;
-
-        // Find the best matching color in the second image (reference)
-        for (const c2 of colors2.slice(0, 5)) {
-            const similarity = compareColors(c1.color, c2.color);
-            if (similarity > bestMatchScore) {
-                bestMatchScore = similarity;
+        for (const src of sourceColors.slice(0, 5)) {
+            let bestMatch = 0;
+            for (const tgt of targetColors.slice(0, 5)) {
+                const sim = compareColors(src.color, tgt.color);
+                if (sim > bestMatch) bestMatch = sim;
             }
+            const weight = src.pixelFraction || 0.1;
+            totalScore += bestMatch * weight;
+            totalWeight += weight;
         }
+        return totalWeight > 0 ? (totalScore / totalWeight) : 0;
+    };
 
-        // Add to total score, weighted by the pixel fraction of the scanned color
-        // This ensures that prominent colors matter more
-        const weight = c1.pixelFraction || 0.1;
-        totalScore += bestMatchScore * weight;
-        totalWeight += weight;
-    }
+    // Symmetric comparison: Check both directions
+    // 1. Do scanned colors exist in reference? (Penalizes extra colors in scan)
+    const score1 = getOneWayScore(colors1, colors2);
 
-    // Normalize result to 0-100
-    return totalWeight > 0 ? (totalScore / totalWeight) * 100 : 0;
+    // 2. Do reference colors exist in scan? (Penalizes missing colors from reference)
+    const score2 = getOneWayScore(colors2, colors1);
+
+    // Return average of both directions
+    return ((score1 + score2) / 2) * 100;
 }
 
 /**
@@ -42,21 +45,23 @@ function calculateColorSimilarity(colors1, colors2) {
 function compareColors(c1, c2) {
     if (!c1 || !c2) return 0;
 
-    // Convert both to RGB objects
     const rgb1 = toRgb(c1);
     const rgb2 = toRgb(c2);
 
     if (!rgb1 || !rgb2) return 0;
 
-    // Calculate Euclidean distance in RGB space
     const distance = Math.sqrt(
         Math.pow(rgb1.r - rgb2.r, 2) +
         Math.pow(rgb1.g - rgb2.g, 2) +
         Math.pow(rgb1.b - rgb2.b, 2)
     );
 
-    // Normalize to 0-1 (max distance in RGB is ~441)
-    return 1 - (distance / 441);
+    // Stricter penalty: Exponential drop-off
+    // Distance 0 -> 1.0
+    // Distance 50 -> ~0.7
+    // Distance 100 -> ~0.5
+    // Distance 200 -> ~0.2
+    return Math.exp(-distance / 150);
 }
 
 /**

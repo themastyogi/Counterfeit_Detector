@@ -274,24 +274,40 @@ async function evaluateReferenceMode(product, scanImages, visionResult, referenc
         result.debug_info.similarity = similarity;
         result.debug_info.comparison_details = comparisonDetails;
 
-        if (similarity >= 0.8) {
-            // High similarity - likely genuine
+        // Check for "Photocopy" pattern: High text match but very low color match
+        if (comparisonDetails.textSimilarity > 70 && comparisonDetails.colorSimilarity < 20) {
+            result.violations.push({
+                code: 'POTENTIAL_PHOTOCOPY',
+                message: 'High text match with low color match - potential photocopy or B&W copy',
+                weight: 60 // High risk
+            });
+        }
+
+        if (similarity >= 0.85) {
+            // Very High similarity - likely genuine
             result.violations.push({
                 code: 'HIGH_SIMILARITY',
                 message: `High similarity to reference (${(similarity * 100).toFixed(0)}%)`,
                 weight: 0
             });
-        } else if (similarity < 0.5) {
+        } else if (similarity >= 0.70) {
+            // High-Medium similarity
+            result.violations.push({
+                code: 'GOOD_SIMILARITY',
+                message: `Good similarity to reference (${(similarity * 100).toFixed(0)}%)`,
+                weight: 10 // Slight risk
+            });
+        } else if (similarity < 0.55) {
             // Low similarity - suspicious
-            const weight = weights.low_similarity || 50;
+            const weight = weights.low_similarity || 60; // Increased from 50
             result.violations.push({
                 code: 'LOW_SIMILARITY',
                 message: `Low similarity to reference (${(similarity * 100).toFixed(0)}%)`,
                 weight
             });
         } else {
-            // Medium similarity
-            const weight = weights.medium_similarity || 20;
+            // Medium similarity (0.55 - 0.70)
+            const weight = weights.medium_similarity || 35; // Increased from 20
             result.violations.push({
                 code: 'MEDIUM_SIMILARITY',
                 message: `Medium similarity to reference (${(similarity * 100).toFixed(0)}%)`,

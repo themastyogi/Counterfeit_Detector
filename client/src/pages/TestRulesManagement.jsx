@@ -478,264 +478,321 @@ const TestRulesManagement = () => {
                                 <button
                                     onClick={saveRules}
                                     disabled={loading || !canEdit}
-```
-                                return (
-                                <div className="max-w-7xl mx-auto p-6">
-                                    <div className="mb-8">
-                                        <h1 className="text-3xl font-bold text-primary mb-2">Test Rules Management</h1>
-                                        <p className="text-text-muted mb-4">Configure validation rules and weights for each product category</p>
+                                    className="btn btn-primary flex-1 flex items-center justify-center gap-2"
+                                    title={!canEdit ? "You don't have permission to edit rules" : ""}
+                                >
+                                    <Save size={20} />
+                                    {loading ? 'Saving...' : canEdit ? 'Save Rules' : 'View Only'}
+                                </button>
+                                <button
+                                    onClick={() => handleProductSelect(selectedProduct)}
+                                    className="btn btn-outline flex items-center gap-2"
+                                >
+                                    <RotateCcw size={20} />
+                                    Reset
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
 
-                                        {/* Quick Start Guide */}
-                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                            <h3 className="font-semibold text-blue-900 mb-2">Quick Start:</h3>
-                                            <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                                                <li>Select a product from the left panel</li>
-                                                <li>Click a template (Book, Mobile, etc.) to apply pre-configured rules</li>
-                                                <li>Customize rules and weights as needed</li>
-                                                <li>Click "Save Rules" to apply</li>
-                                            </ol>
-                                        </div>
-                                    </div>
-
-                                    {message && (
-                                        <div className={`mb-6 p-4 rounded-lg ${message.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                                            {message}
-                                        </div>
-                                    )}
-
-                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                        {/* Product Selector */}
-                                        <div className="card p-6">
-                                            <h2 className="text-lg font-bold text-primary mb-4">Select Product</h2>
-                                            <div className="flex items-center gap-2">
-                                                <select
-                                                    value={selectedProduct?._id || ''}
-                                                    onChange={(e) => handleProductSelect(products.find(p => p._id === e.target.value))}
-                                                    className="input-field flex-1"
-                                                >
-                                                    <option value="">-- Select a product/category --</option>
-                                                    {products.map(product => (
-                                                        <option key={product._id} value={product._id}>
-                                                            {product.product_name} ({product.sku})
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <button
-                                                    onClick={handleOpenVariantModal}
-                                                    className="btn btn-outline flex items-center gap-2"
-                                                    title="Create a variant for this category"
-                                                >
-                                                    <Copy size={18} />
-                                                    Create Variant
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {/* Rule Editor */}
-                                        <div className="lg:col-span-2 space-y-6">
-                                            {/* Template Library */}
-                                            <div className="card p-6">
-                                                <div className="mb-4">
-                                                    <h2 className="text-lg font-bold text-primary mb-2">Template Library</h2>
-                                                    <p className="text-sm text-text-muted">
-                                                        {selectedProduct
-                                                            ? "Click a template below to apply pre-configured rules for that category"
-                                                            : "Select a product first to apply templates"}
-                                                    </p>
-                                                </div>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                    {Object.entries(templates).map(([key, template]) => {
-                                                        const Icon = template.icon;
-                                                        return (
-                                                            <button
-                                                                key={key}
-                                                                onClick={() => applyTemplate(key)}
-                                                                disabled={!selectedProduct}
-                                                                className={`p-4 rounded-lg transition-all flex flex-col items-center gap-2 ${selectedProduct
-                                                                    ? 'bg-gradient-to-br from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 hover:shadow-lg cursor-pointer'
-                                                                    : 'bg-gray-100 cursor-not-allowed opacity-50'
-                                                                    }`}
-                                                                title={selectedProduct ? `Apply ${template.name}` : 'Select a product first'}
-                                                            >
-                                                                <Icon className={`w-8 h-8 ${selectedProduct ? 'text-blue-600' : 'text-gray-400'}`} />
-                                                                <span className="text-xs font-medium text-center">{template.name}</span>
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-
-                                            {selectedProduct && (
-                                                <>
-                                                    {/* General Settings */}
-                                                    <div className="card p-6">
-                                                        <h2 className="text-lg font-bold text-primary mb-4">General Settings</h2>
-                                                        <div className="space-y-3">
-                                                            <label className="flex items-center gap-3 cursor-pointer">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={rules.use_logo_check || false}
-                                                                    onChange={(e) => setRules({ ...rules, use_logo_check: e.target.checked })}
-                                                                    className="w-5 h-5 text-blue-600 rounded"
-                                                                />
-                                                                <span className="font-medium">Enable Logo Detection</span>
-                                                            </label>
-                                                            <label className="flex items-center gap-3 cursor-pointer">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={rules.use_generic_labels || false}
-                                                                    onChange={(e) => setRules({ ...rules, use_generic_labels: e.target.checked })}
-                                                                    className="w-5 h-5 text-blue-600 rounded"
-                                                                />
-                                                                <span className="font-medium">Use Generic Category Labels</span>
-                                                            </label>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Required Identifiers */}
-                                                    <div className="card p-6">
-                                                        <div className="flex items-center justify-between mb-4">
-                                                            <h2 className="text-lg font-bold text-primary">Required Identifiers</h2>
-                                                            <button onClick={addIdentifier} className="btn btn-primary btn-sm flex items-center gap-2">
-                                                                <Plus size={16} />
-                                                                Add
-                                                            </button>
-                                                        </div>
-                                                        <div className="space-y-3">
-                                                            {rules.required_identifiers?.map(identifier => (
-                                                                <div key={identifier} className="bg-gray-50 p-4 rounded-lg">
-                                                                    <div className="flex items-center justify-between mb-2">
-                                                                        <span className="font-semibold text-sm">{identifier}</span>
-                                                                        <button
-                                                                            onClick={() => removeIdentifier(identifier)}
-                                                                            className="text-red-600 hover:text-red-700"
-                                                                        >
-                                                                            <Trash2 size={16} />
-                                                                        </button>
-                                                                    </div>
-                                                                    <input
-                                                                        type="text"
-                                                                        placeholder="Regex pattern (optional)"
-                                                                        value={rules.identifier_patterns?.[identifier] || ''}
-                                                                        onChange={(e) => updatePattern(identifier, e.target.value)}
-                                                                        className="input-field text-sm font-mono"
-                                                                    />
-                                                                </div>
-                                                            ))}
-                                                            {(!rules.required_identifiers || rules.required_identifiers.length === 0) && (
-                                                                <p className="text-text-muted text-sm text-center py-4">No identifiers defined. Click "Add" to create one.</p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Violation Weights */}
-                                                    <div className="card p-6">
-                                                        <h2 className="text-lg font-bold text-primary mb-4">Violation Weights (0-100)</h2>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                            {[
-                                                                'brand_mismatch',
-                                                                'category_mismatch',
-                                                                'logo_missing',
-                                                                'low_similarity',
-                                                                'medium_similarity',
-                                                                ...rules.required_identifiers?.map(id => `missing_${id}`) || [],
-                                                                ...rules.required_identifiers?.map(id => `invalid_${id}`) || []
-                                                            ].map(key => (
-                                                                <div key={key}>
-                                                                    <label className="block text-sm font-medium text-text-main mb-1">
-                                                                        {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                                                    </label>
-                                                                    <input
-                                                                        type="number"
-                                                                        min="0"
-                                                                        max="100"
-                                                                        value={weights[key] || 0}
-                                                                        onChange={(e) => updateWeight(key, e.target.value)}
-                                                                        className="input-field"
-                                                                    />
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Actions */}
-                                                    <div className="flex gap-3">
-                                                        <button
-                                                            onClick={saveRules}
-                                                            disabled={loading || !canEdit}
-                                                            className="btn btn-primary flex-1 flex items-center justify-center gap-2"
-                                                            title={!canEdit ? "You don't have permission to edit rules" : ""}
-                                                        >
-                                                            <Save size={20} />
-                                                            {loading ? 'Saving...' : canEdit ? 'Save Rules' : 'View Only'}
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleProductSelect(selectedProduct)}
-                                                            className="btn btn-outline flex items-center gap-2"
-                                                        >
-                                                            <RotateCcw size={20} />
-                                                            Reset
-                                                        </button>
-                                                    </div>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Variant Creation Modal */}
-                                    {showVariantModal && (
-                                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                                            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                                                <h3 className="text-xl font-bold mb-4">Create Product Variant</h3>
-                                                <p className="text-sm text-text-muted mb-4">
-                                                    Create a new variant for this category to define specific rules.
-                                                </p>
-                                                <form onSubmit={handleCreateVariant}>
-                                                    <div className="space-y-4">
-                                                        <div>
-                                                            <label className="block text-sm font-medium mb-1">Variant Name</label>
-                                                            <input
-                                                                type="text"
-                                                                className="input-field w-full"
-                                                                value={variantData.name}
-                                                                onChange={e => setVariantData({ ...variantData, name: e.target.value })}
-                                                                required
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className="block text-sm font-medium mb-1">Unique SKU</label>
-                                                            <input
-                                                                type="text"
-                                                                className="input-field w-full"
-                                                                value={variantData.sku}
-                                                                onChange={e => setVariantData({ ...variantData, sku: e.target.value })}
-                                                                required
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex justify-end gap-3 mt-6">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setShowVariantModal(false)}
-                                                            className="btn btn-ghost"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                        <button
-                                                            type="submit"
-                                                            className="btn btn-primary"
-                                                            disabled={loading}
-                                                        >
-                                                            {loading ? 'Creating...' : 'Create Variant'}
-                                                        </button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    )}
+            {/* Variant Creation Modal */}
+            {showVariantModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                        <h3 className="text-xl font-bold mb-4">Create Product Variant</h3>
+                        <p className="text-sm text-text-muted mb-4">
+                            Create a new variant for this category to define specific rules.
+                        </p>
+                        <form onSubmit={handleCreateVariant}>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Variant Name</label>
+                                    <input
+                                        type="text"
+                                        className="input-field w-full"
+                                        value={variantData.name}
+                                        onChange={e => setVariantData({ ...variantData, name: e.target.value })}
+                                        required
+                                    />
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Unique SKU</label>
+                                    <input
+                                        type="text"
+                                        className="input-field w-full"
+                                        value={variantData.sku}
+                                        onChange={e => setVariantData({ ...variantData, sku: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-3 mt-6">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowVariantModal(false)}
+                                    className="btn btn-ghost"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Creating...' : 'Create Variant'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default TestRulesManagement;
+<div className={`mb-6 p-4 rounded-lg ${message.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+    {message}
+</div>
+                                    )}
+
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {/* Product Selector */}
+    <div className="card p-6">
+        <h2 className="text-lg font-bold text-primary mb-4">Select Product</h2>
+        <div className="flex items-center gap-2">
+            <select
+                value={selectedProduct?._id || ''}
+                onChange={(e) => handleProductSelect(products.find(p => p._id === e.target.value))}
+                className="input-field flex-1"
+            >
+                <option value="">-- Select a product/category --</option>
+                {products.map(product => (
+                    <option key={product._id} value={product._id}>
+                        {product.product_name} ({product.sku})
+                    </option>
+                ))}
+            </select>
+            <button
+                onClick={handleOpenVariantModal}
+                className="btn btn-outline flex items-center gap-2"
+                title="Create a variant for this category"
+            >
+                <Copy size={18} />
+                Create Variant
+            </button>
+        </div>
+    </div>
+
+    {/* Rule Editor */}
+    <div className="lg:col-span-2 space-y-6">
+        {/* Template Library */}
+        <div className="card p-6">
+            <div className="mb-4">
+                <h2 className="text-lg font-bold text-primary mb-2">Template Library</h2>
+                <p className="text-sm text-text-muted">
+                    {selectedProduct
+                        ? "Click a template below to apply pre-configured rules for that category"
+                        : "Select a product first to apply templates"}
+                </p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {Object.entries(templates).map(([key, template]) => {
+                    const Icon = template.icon;
+                    return (
+                        <button
+                            key={key}
+                            onClick={() => applyTemplate(key)}
+                            disabled={!selectedProduct}
+                            className={`p-4 rounded-lg transition-all flex flex-col items-center gap-2 ${selectedProduct
+                                ? 'bg-gradient-to-br from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 hover:shadow-lg cursor-pointer'
+                                : 'bg-gray-100 cursor-not-allowed opacity-50'
+                                }`}
+                            title={selectedProduct ? `Apply ${template.name}` : 'Select a product first'}
+                        >
+                            <Icon className={`w-8 h-8 ${selectedProduct ? 'text-blue-600' : 'text-gray-400'}`} />
+                            <span className="text-xs font-medium text-center">{template.name}</span>
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+
+        {selectedProduct && (
+            <>
+                {/* General Settings */}
+                <div className="card p-6">
+                    <h2 className="text-lg font-bold text-primary mb-4">General Settings</h2>
+                    <div className="space-y-3">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={rules.use_logo_check || false}
+                                onChange={(e) => setRules({ ...rules, use_logo_check: e.target.checked })}
+                                className="w-5 h-5 text-blue-600 rounded"
+                            />
+                            <span className="font-medium">Enable Logo Detection</span>
+                        </label>
+                        <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={rules.use_generic_labels || false}
+                                onChange={(e) => setRules({ ...rules, use_generic_labels: e.target.checked })}
+                                className="w-5 h-5 text-blue-600 rounded"
+                            />
+                            <span className="font-medium">Use Generic Category Labels</span>
+                        </label>
+                    </div>
+                </div>
+
+                {/* Required Identifiers */}
+                <div className="card p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-bold text-primary">Required Identifiers</h2>
+                        <button onClick={addIdentifier} className="btn btn-primary btn-sm flex items-center gap-2">
+                            <Plus size={16} />
+                            Add
+                        </button>
+                    </div>
+                    <div className="space-y-3">
+                        {rules.required_identifiers?.map(identifier => (
+                            <div key={identifier} className="bg-gray-50 p-4 rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="font-semibold text-sm">{identifier}</span>
+                                    <button
+                                        onClick={() => removeIdentifier(identifier)}
+                                        className="text-red-600 hover:text-red-700"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Regex pattern (optional)"
+                                    value={rules.identifier_patterns?.[identifier] || ''}
+                                    onChange={(e) => updatePattern(identifier, e.target.value)}
+                                    className="input-field text-sm font-mono"
+                                />
+                            </div>
+                        ))}
+                        {(!rules.required_identifiers || rules.required_identifiers.length === 0) && (
+                            <p className="text-text-muted text-sm text-center py-4">No identifiers defined. Click "Add" to create one.</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Violation Weights */}
+                <div className="card p-6">
+                    <h2 className="text-lg font-bold text-primary mb-4">Violation Weights (0-100)</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[
+                            'brand_mismatch',
+                            'category_mismatch',
+                            'logo_missing',
+                            'low_similarity',
+                            'medium_similarity',
+                            ...rules.required_identifiers?.map(id => `missing_${id}`) || [],
+                            ...rules.required_identifiers?.map(id => `invalid_${id}`) || []
+                        ].map(key => (
+                            <div key={key}>
+                                <label className="block text-sm font-medium text-text-main mb-1">
+                                    {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={weights[key] || 0}
+                                    onChange={(e) => updateWeight(key, e.target.value)}
+                                    className="input-field"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                    <button
+                        onClick={saveRules}
+                        disabled={loading || !canEdit}
+                        className="btn btn-primary flex-1 flex items-center justify-center gap-2"
+                        title={!canEdit ? "You don't have permission to edit rules" : ""}
+                    >
+                        <Save size={20} />
+                        {loading ? 'Saving...' : canEdit ? 'Save Rules' : 'View Only'}
+                    </button>
+                    <button
+                        onClick={() => handleProductSelect(selectedProduct)}
+                        className="btn btn-outline flex items-center gap-2"
+                    >
+                        <RotateCcw size={20} />
+                        Reset
+                    </button>
+                </div>
+            </>
+        )}
+    </div>
+</div>
+
+{/* Variant Creation Modal */ }
+{
+    showVariantModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <h3 className="text-xl font-bold mb-4">Create Product Variant</h3>
+                <p className="text-sm text-text-muted mb-4">
+                    Create a new variant for this category to define specific rules.
+                </p>
+                <form onSubmit={handleCreateVariant}>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Variant Name</label>
+                            <input
+                                type="text"
+                                className="input-field w-full"
+                                value={variantData.name}
+                                onChange={e => setVariantData({ ...variantData, name: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Unique SKU</label>
+                            <input
+                                type="text"
+                                className="input-field w-full"
+                                value={variantData.sku}
+                                onChange={e => setVariantData({ ...variantData, sku: e.target.value })}
+                                required
+                            />
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-3 mt-6">
+                        <button
+                            type="button"
+                            onClick={() => setShowVariantModal(false)}
+                            className="btn btn-ghost"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={loading}
+                        >
+                            {loading ? 'Creating...' : 'Create Variant'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    )
+}
+                                </div >
                                 );
 };
 
-                                export default TestRulesManagement;
-                                ```
+export default TestRulesManagement;
+```

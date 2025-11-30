@@ -34,8 +34,8 @@ const productMasterSchema = new mongoose.Schema({
         trim: true
     },
     metadata_json: {
-        type: Map,
-        of: String
+        type: mongoose.Schema.Types.Mixed,
+        default: {}
     },
     is_global: {
         type: Boolean,

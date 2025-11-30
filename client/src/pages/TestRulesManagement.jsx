@@ -254,19 +254,36 @@ const TestRulesManagement = () => {
                 <div className="card p-6">
                     <h2 className="text-lg font-bold text-primary mb-4">Select Product</h2>
                     <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {products.map(product => (
-                            <button
-                                key={product._id}
-                                onClick={() => handleProductSelect(product)}
-                                className={`w-full text-left p-3 rounded-lg transition-colors ${selectedProduct?._id === product._id
-                                    ? 'bg-blue-50 border-2 border-blue-500'
-                                    : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
-                                    }`}
-                            >
-                                <div className="font-semibold text-sm">{product.product_name}</div>
-                                <div className="text-xs text-text-muted">{product.brand} • {product.category}</div>
-                            </button>
-                        ))}
+                        {products.map(product => {
+                            const hasRules = product.metadata_json &&
+                                product.metadata_json.rules &&
+                                Object.keys(product.metadata_json.rules).length > 0;
+
+                            return (
+                                <button
+                                    key={product._id}
+                                    onClick={() => handleProductSelect(product)}
+                                    className={`w-full text-left p-3 rounded-lg transition-colors ${selectedProduct?._id === product._id
+                                        ? 'bg-blue-50 border-2 border-blue-500'
+                                        : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                                        }`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex-1">
+                                            <div className="font-semibold text-sm">{product.product_name}</div>
+                                            <div className="text-xs text-text-muted">{product.brand} • {product.category}</div>
+                                        </div>
+                                        {hasRules && (
+                                            <div className="ml-2">
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                    ✓ Rules
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 

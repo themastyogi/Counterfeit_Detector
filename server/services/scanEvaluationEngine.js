@@ -244,12 +244,19 @@ async function evaluateReferenceMode(product, scanImages, visionResult, referenc
         }
 
         // Compute similarity using actual fingerprint comparison
-        const similarity = await computeImageSimilarity(
-            scanImages,
-            [reference.reference_image_path],
-            visionResult,
-            reference.fingerprint
-        );
+        let similarity = 0;
+        try {
+            similarity = await computeImageSimilarity(
+                scanImages,
+                [reference.reference_image_path],
+                visionResult,
+                reference.fingerprint
+            );
+        } catch (simError) {
+            console.error('❌ Error computing similarity:', simError);
+            // Fallback to 0 to avoid crashing the entire scan
+            similarity = 0;
+        }
 
         result.debug_info.similarity = similarity;
 

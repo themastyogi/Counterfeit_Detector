@@ -171,6 +171,21 @@ function ReferenceManagement() {
                                     </select>
                                 </div>
 
+                                {selectedProduct && (
+                                    <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm">
+                                        {products.find(p => p._id === selectedProduct) && (
+                                            <>
+                                                <div className="font-semibold text-blue-900">Selected Product:</div>
+                                                <div className="grid grid-cols-2 gap-2 mt-1">
+                                                    <div><span className="text-text-muted">Name:</span> <span className="font-medium">{products.find(p => p._id === selectedProduct).product_name}</span></div>
+                                                    <div><span className="text-text-muted">SKU:</span> <span className="font-medium">{products.find(p => p._id === selectedProduct).sku}</span></div>
+                                                    <div><span className="text-text-muted">Brand:</span> <span className="font-medium">{products.find(p => p._id === selectedProduct).brand}</span></div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+
                                 <div>
                                     <label className="block text-sm font-medium text-text-main mb-1">
                                         Reference Image *

@@ -3,10 +3,12 @@ const router = express.Router();
 const { verifyToken, isTenantAdmin, isSystemAdmin } = require('../middleware/authMiddleware');
 const { checkFeature } = require('../middleware/featureMiddleware');
 const ProductReference = require('../models/ProductReference');
-const upload = require('multer')({ dest: 'uploads/references/' });
-const fs = require('fs');
-const path = require('path');
+const multer = require('multer');
+const cloudinary = require('../config/cloudinaryConfig');
 const { extractFingerprint } = require('../services/referenceComparison');
+
+// Use memory storage instead of disk storage
+const upload = multer({ storage: multer.memoryStorage() });
 
 /**
  * Upload reference image for a product
@@ -20,23 +22,42 @@ router.post('/upload', verifyToken, isTenantAdmin, upload.single('image'), async
         console.log('File:', req.file);
 
         const { product_id, notes } = req.body;
-        const image_path = req.file ? req.file.path : null;
 
-        if (!product_id || !image_path) {
-            console.log('❌ Missing product_id or image_path');
+        if (!product_id || !req.file) {
+            console.log('❌ Missing product_id or image file');
             return res.status(400).json({ message: 'Product ID and image are required' });
         }
 
-        console.log('✅ Validation passed, extracting fingerprint...');
+        console.log('☁️ Uploading to Cloudinary...');
 
-        // Extract fingerprint from the uploaded image
-        const fingerprint = await extractFingerprint(image_path);
+        // Upload to Cloudinary using buffer
+        const uploadResult = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    folder: 'counterfeit_detector/references',
+                    resource_type: 'image',
+                    public_id: `ref_${product_id}_${Date.now()}`
+                },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            );
+            uploadStream.end(req.file.buffer);
+        });
+
+        console.log('✅ Cloudinary upload successful:', uploadResult.secure_url);
+
+        // For fingerprint extraction, we need to download the image temporarily
+        // Or we can use the Cloudinary URL directly if extractFingerprint supports URLs
+        console.log('✅ Extracting fingerprint from Cloudinary URL...');
+        const fingerprint = await extractFingerprint(uploadResult.secure_url);
 
         console.log('✅ Fingerprint extracted, creating reference...');
 
         const reference = new ProductReference({
             product_id,
-            reference_image_path: image_path,
+            reference_image_path: uploadResult.secure_url, // Store Cloudinary URL
             fingerprint,
             notes,
             uploaded_by: req.user.id
@@ -127,6 +148,24 @@ router.delete('/:id', verifyToken, isTenantAdmin, checkFeature('reference_compar
             reference.tenant_id &&
             reference.tenant_id.toString() !== req.user.tenant_id) {
             return res.status(403).json({ message: 'Access denied' });
+        }
+
+        // Delete from Cloudinary if it's a Cloudinary URL
+        if (reference.reference_image_path && reference.reference_image_path.includes('cloudinary.com')) {
+            try {
+                // Extract public_id from Cloudinary URL
+                const urlParts = reference.reference_image_path.split('/');
+                const filename = urlParts[urlParts.length - 1].split('.')[0];
+                const folder = 'counterfeit_detector/references';
+                const public_id = `${folder}/${filename}`;
+
+                console.log('🗑️ Deleting from Cloudinary:', public_id);
+                await cloudinary.uploader.destroy(public_id);
+                console.log('✅ Deleted from Cloudinary');
+            } catch (cloudError) {
+                console.error('⚠️ Failed to delete from Cloudinary:', cloudError.message);
+                // Continue with soft delete even if Cloudinary deletion fails
+            }
         }
 
         // Soft delete

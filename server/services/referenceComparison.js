@@ -26,14 +26,14 @@ function calculateColorSimilarity(colors1, colors2) {
 }
 
 /**
- * Compare two hex colors and return similarity (0-1)
+ * Compare two colors (hex or RGB object) and return similarity (0-1)
  */
-function compareColors(hex1, hex2) {
-    if (!hex1 || !hex2) return 0;
+function compareColors(c1, c2) {
+    if (!c1 || !c2) return 0;
 
-    // Convert hex to RGB
-    const rgb1 = hexToRgb(hex1);
-    const rgb2 = hexToRgb(hex2);
+    // Convert both to RGB objects
+    const rgb1 = toRgb(c1);
+    const rgb2 = toRgb(c2);
 
     if (!rgb1 || !rgb2) return 0;
 
@@ -49,15 +49,29 @@ function compareColors(hex1, hex2) {
 }
 
 /**
- * Convert hex color to RGB
+ * Convert color input (hex string or RGB object) to standardized RGB object
  */
-function hexToRgb(hex) {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
-    } : null;
+function toRgb(input) {
+    // If it's already an RGB object with r,g,b or red,green,blue
+    if (typeof input === 'object') {
+        if (input.r !== undefined) return input;
+        if (input.red !== undefined) return { r: input.red, g: input.green, b: input.blue };
+        // Handle Cloud Vision structure { color: { red, green, blue } }
+        if (input.color) return toRgb(input.color);
+        return null;
+    }
+
+    // If it's a hex string
+    if (typeof input === 'string') {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(input);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
+    }
+
+    return null;
 }
 
 /**

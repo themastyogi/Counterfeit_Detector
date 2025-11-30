@@ -170,7 +170,9 @@ const ViewSavedRules = () => {
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex-1">
-                                            <div className="font-bold text-lg text-primary">{product.product_name}</div>
+                                            <div className="font-bold text-lg text-primary">
+                                                {product.product_name} <span className="text-sm font-normal text-text-muted">({product.sku})</span>
+                                            </div>
                                             <div className="text-sm text-text-muted">{product.brand} • {product.category}</div>
                                         </div>
                                         <div className="flex items-center gap-3">

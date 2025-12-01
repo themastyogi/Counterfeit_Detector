@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { Shield, Menu, X, LogOut, User, Crown, LayoutDashboard, History, ScanLine, Image, Settings } from 'lucide-react';
+import { Shield, Menu, X, LogOut, User, Crown, LayoutDashboard, History, ScanLine, Image, Settings, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Layout = () => {
@@ -59,13 +59,21 @@ const Layout = () => {
                   </div>
 
                   {(isAdmin || user?.role === 'tenant_admin') && (
-                    <Link
-                      to="/admin"
-                      className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-sm font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
-                    >
-                      <Crown size={16} />
-                      Admin Panel
-                    </Link>
+                    <>
+                      <Link
+                        to="/test-rules"
+                        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive('/test-rules') ? 'text-accent bg-blue-50' : 'text-text-muted hover:text-primary hover:bg-gray-50'}`}
+                      >
+                        Test Rules
+                      </Link>
+                      <Link
+                        to="/admin"
+                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 text-white text-sm font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+                      >
+                        <Crown size={16} />
+                        Admin Panel
+                      </Link>
+                    </>
                   )}
 
                   {/* User Profile Dropdown Trigger (Simplified as direct info for now) */}
@@ -147,14 +155,24 @@ const Layout = () => {
                   </Link>
 
                   {(isAdmin || user?.role === 'tenant_admin') && (
-                    <Link
-                      to="/admin"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium text-white bg-gradient-to-r from-blue-500 to-emerald-500 shadow-md my-2"
-                    >
-                      <Crown size={20} />
-                      Admin Panel
-                    </Link>
+                    <>
+                      <Link
+                        to="/test-rules"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium text-text-main hover:bg-gray-50 hover:text-accent"
+                      >
+                        <FileText size={20} />
+                        Test Rules
+                      </Link>
+                      <Link
+                        to="/admin"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium text-white bg-gradient-to-r from-blue-500 to-emerald-500 shadow-md my-2"
+                      >
+                        <Crown size={20} />
+                        Admin Panel
+                      </Link>
+                    </>
                   )}
 
                   <button

@@ -50,26 +50,6 @@ if (!fs.existsSync(referencesDir)) {
 // Routes - ORDER MATTERS!
 const authRoutes = require('./routes/authRoutes');
 const analysisRoutes = require('./routes/analysisRoutes');
-const adminRoutes = require('./routes/adminRoutes');
-const tenantRoutes = require('./routes/tenantRoutes');
-const productRoutes = require('./routes/productRoutes');
-const scanRoutes = require('./routes/scanRoutes');
-const referenceRoutes = require('./routes/referenceRoutes');
-
-const { initializeAdmin } = require('./controllers/authController');
-const testManagementRoutes = require('./routes/testManagementRoutes');
-console.log('âœ… Test management routes loaded successfully');
-app.use('/api/tm', testManagementRoutes);
-console.log('âœ… Test management routes registered at /api/tm');
-    } catch (error) {
-    console.error('âŒ Error loading test management routes:', error.message);
-}
-}
-
-// Serve static files from uploads directory (PUBLIC for image display)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Basic Route (Dev only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/', (req, res) => {
         res.send('Counterfeit Detector API is running');

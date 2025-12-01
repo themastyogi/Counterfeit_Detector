@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const TestRule = require('../models/TestRule');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { verifyToken, isTenantAdmin } = require('../middleware/authMiddleware');
 
 // @desc    Get all test rules for a product
 // @route   GET /api/test-rules/product/:productId
 // @access  Private/Admin
-router.get('/product/:productId', protect, async (req, res) => {
+router.get('/product/:productId', verifyToken, async (req, res) => {
     try {
         const rules = await TestRule.find({ product_id: req.params.productId }).sort({ is_default: -1, name: 1 });
         res.json(rules);
@@ -18,7 +18,7 @@ router.get('/product/:productId', protect, async (req, res) => {
 // @desc    Create a new test rule profile
 // @route   POST /api/test-rules
 // @access  Private/Admin
-router.post('/', protect, admin, async (req, res) => {
+router.post('/', verifyToken, isTenantAdmin, async (req, res) => {
     try {
         const { product_id, name, rules, weights, is_default } = req.body;
 
@@ -48,7 +48,7 @@ router.post('/', protect, admin, async (req, res) => {
 // @desc    Update a test rule profile
 // @route   PUT /api/test-rules/:id
 // @access  Private/Admin
-router.put('/:id', protect, admin, async (req, res) => {
+router.put('/:id', verifyToken, isTenantAdmin, async (req, res) => {
     try {
         const { name, rules, weights, is_default } = req.body;
         const testRule = await TestRule.findById(req.params.id);
@@ -80,7 +80,7 @@ router.put('/:id', protect, admin, async (req, res) => {
 // @desc    Delete a test rule profile
 // @route   DELETE /api/test-rules/:id
 // @access  Private/Admin
-router.delete('/:id', protect, admin, async (req, res) => {
+router.delete('/:id', verifyToken, isTenantAdmin, async (req, res) => {
     try {
         const testRule = await TestRule.findById(req.params.id);
 

@@ -24,7 +24,7 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
         console.log('Body:', req.body);
         console.log('File:', req.file);
 
-        const { product_id, scan_type, reference_id } = req.body;
+        const { product_id, scan_type, reference_id, test_rule_id } = req.body;
 
         if (!req.file) {
             console.log('❌ No image provided');
@@ -115,12 +115,29 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
                     console.log('📦 Product loaded:', product?.product_name);
                 }
 
+                // Fetch Test Rule if provided
+                let ruleSet = null;
+                if (test_rule_id) {
+                    const TestRule = require('../models/TestRule');
+                    try {
+                        ruleSet = await TestRule.findById(test_rule_id);
+                        if (ruleSet) {
+                            console.log(`📏 Using Test Rule: ${ruleSet.name}`);
+                        }
+                    } catch (e) {
+                        console.error('Error fetching test rule:', e);
+                    }
+                }
+
                 // Use NEW EVALUATION ENGINE
                 const evaluation = await evaluateScan(
                     product || { brand: 'Unknown', category: 'Other', metadata_json: {} },
                     [image_url], // Pass URL
                     visionResult,
-                    { reference_id }
+                    {
+                        reference_id,
+                        ruleSet
+                    }
                 );
 
                 console.log('🎯 Evaluation complete:', evaluation.used_mode);
@@ -143,36 +160,41 @@ router.post('/submit', verifyToken, upload.single('image'), async (req, res) => 
 
                 // Build reference comparison data (if available)
                 let referenceComparison = null;
-                if (evaluation.used_mode === 'REFERENCE_COMPARE' && evaluation.debug_info.similarity !== undefined) {
+                if ((evaluation.used_mode === 'REFERENCE_COMPARE' || evaluation.used_mode === 'REFERENCE_COMPARE_AUTO') && evaluation.debug_info.similarity !== undefined) {
                     const ProductReference = require('../models/ProductReference');
-                    const reference = await ProductReference.findById(reference_id).populate('product_id');
+                    // Use reference_id from body OR auto-matched reference
+                    const actualReferenceId = reference_id || evaluation.debug_info.auto_matched_reference;
 
-                    if (reference) {
-                        console.log('🔍 Reference found:', reference._id);
-                        console.log('🖼️ Reference Image Path (raw):', reference.reference_image_path);
+                    if (actualReferenceId) {
+                        const reference = await ProductReference.findById(actualReferenceId).populate('product_id');
 
-                        // Don't add / prefix to Cloudinary URLs
-                        const normalizedPath = reference.reference_image_path
-                            ? (reference.reference_image_path.startsWith('http')
-                                ? reference.reference_image_path
-                                : `/${reference.reference_image_path.replace(/\\/g, '/')}`)
-                            : null;
+                        if (reference) {
+                            console.log('🔍 Reference found:', reference._id);
+                            console.log('🖼️ Reference Image Path (raw):', reference.reference_image_path);
 
-                        console.log('🖼️ Reference Image Path (normalized):', normalizedPath);
+                            // Don't add / prefix to Cloudinary URLs
+                            const normalizedPath = reference.reference_image_path
+                                ? (reference.reference_image_path.startsWith('http')
+                                    ? reference.reference_image_path
+                                    : `/${reference.reference_image_path.replace(/\\/g, '/')}`)
+                                : null;
 
-                        referenceComparison = {
-                            overallSimilarity: evaluation.debug_info.similarity,
-                            referenceId: reference._id,
-                            confidence: evaluation.debug_info.similarity > 0.8 ? 'HIGH' :
-                                evaluation.debug_info.similarity > 0.5 ? 'MEDIUM' : 'LOW',
-                            referenceName: reference.product_id?.product_name,
-                            referenceImage: normalizedPath,
-                            details: {
-                                colorMatch: evaluation.debug_info.comparison_details?.colorSimilarity / 100 || 0,
-                                logoMatch: evaluation.debug_info.comparison_details?.logoSimilarity / 100 || 0,
-                                textMatch: evaluation.debug_info.comparison_details?.textSimilarity / 100 || 0
-                            }
-                        };
+                            console.log('🖼️ Reference Image Path (normalized):', normalizedPath);
+
+                            referenceComparison = {
+                                overallSimilarity: evaluation.debug_info.similarity,
+                                referenceId: reference._id,
+                                confidence: evaluation.debug_info.similarity > 0.8 ? 'HIGH' :
+                                    evaluation.debug_info.similarity > 0.5 ? 'MEDIUM' : 'LOW',
+                                referenceName: reference.product_id?.product_name,
+                                referenceImage: normalizedPath,
+                                details: {
+                                    colorMatch: evaluation.debug_info.comparison_details?.colorSimilarity / 100 || 0,
+                                    logoMatch: evaluation.debug_info.comparison_details?.logoSimilarity / 100 || 0,
+                                    textMatch: evaluation.debug_info.comparison_details?.textSimilarity / 100 || 0
+                                }
+                            };
+                        }
                     }
                 }
 

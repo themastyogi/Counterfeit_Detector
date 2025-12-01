@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Settings, Save, RotateCcw, Plus, Trash2, Copy, BookOpen, Smartphone, Droplet, Package } from 'lucide-react';
+import { Settings, Save, RotateCcw, Plus, Trash2, BookOpen, Smartphone, Droplet, Package, FileText } from 'lucide-react';
 
 const TestRulesManagement = () => {
     const { token, isAdmin, isTenantAdmin } = useAuth();
     const [products, setProducts] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState(null);
+
+    // Profile State
+    const [profiles, setProfiles] = useState([]);
+    const [selectedProfile, setSelectedProfile] = useState(null);
+    const [isCreatingProfile, setIsCreatingProfile] = useState(false);
+    const [newProfileName, setNewProfileName] = useState('');
+
+    // Rules State
     const [rules, setRules] = useState({
         use_logo_check: false,
         use_generic_labels: false,
@@ -13,67 +21,10 @@ const TestRulesManagement = () => {
         identifier_patterns: {}
     });
     const [weights, setWeights] = useState({});
+
     const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
-
-    // Variant Creation State
-    const [showVariantModal, setShowVariantModal] = useState(false);
-    const [variantData, setVariantData] = useState({ name: '', sku: '' });
-
-    const handleOpenVariantModal = () => {
-        if (!selectedProduct) {
-            setMessage('Please select a product first to create a variant');
-            setTimeout(() => setMessage(''), 3000);
-            return;
-        }
-        const product = products.find(p => p._id === selectedProduct);
-        setVariantData({
-            name: `${product.product_name} - Variant`,
-            sku: `${product.sku}-VAR-1`
-        });
-        setShowVariantModal(true);
-    };
-
-    const handleCreateVariant = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            const parentProduct = products.find(p => p._id === selectedProduct);
-
-            const res = await fetch('/api/products', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    ...parentProduct,
-                    _id: undefined, // Remove ID to create new
-                    createdAt: undefined,
-                    updatedAt: undefined,
-                    product_name: variantData.name,
-                    sku: variantData.sku,
-                    metadata_json: {} // Start with empty rules
-                })
-            });
-
-            if (res.ok) {
-                const newProduct = await res.json();
-                setMessage('✅ Variant created successfully!');
-                setShowVariantModal(false);
-                await fetchProducts(); // Refresh list
-                setSelectedProduct(newProduct._id); // Select new variant
-            } else {
-                const err = await res.json();
-                setMessage(`❌ Failed: ${err.message}`);
-            }
-        } catch (error) {
-            setMessage('❌ Error creating variant');
-        } finally {
-            setLoading(false);
-            setTimeout(() => setMessage(''), 3000);
-        }
-    };
 
     // Template library
     const templates = {
@@ -165,6 +116,29 @@ const TestRulesManagement = () => {
         }
     }, [isAdmin, isTenantAdmin, token]);
 
+    useEffect(() => {
+        if (selectedProduct) {
+            fetchProfiles(selectedProduct._id);
+        }
+    }, [selectedProduct]);
+
+    useEffect(() => {
+        if (selectedProfile) {
+            setRules(selectedProfile.rules || {});
+            setWeights(selectedProfile.weights || {});
+        } else if (selectedProduct && !selectedProfile && !isCreatingProfile) {
+            // Fallback to product default rules if no profile selected (legacy support)
+            const metadata = selectedProduct.metadata_json || {};
+            setRules(metadata.rules || {
+                use_logo_check: false,
+                use_generic_labels: false,
+                required_identifiers: [],
+                identifier_patterns: {}
+            });
+            setWeights(metadata.weights || {});
+        }
+    }, [selectedProfile, selectedProduct]);
+
     const fetchProducts = async () => {
         try {
             const res = await fetch('/api/products', {
@@ -177,16 +151,145 @@ const TestRulesManagement = () => {
         }
     };
 
-    const handleProductSelect = (product) => {
-        setSelectedProduct(product);
-        const metadata = product.metadata_json || {};
-        setRules(metadata.rules || {
-            use_logo_check: false,
-            use_generic_labels: false,
-            required_identifiers: [],
-            identifier_patterns: {}
-        });
-        setWeights(metadata.weights || {});
+    const fetchProfiles = async (productId) => {
+        try {
+            const res = await fetch(`/api/test-rules/product/${productId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setProfiles(data);
+            if (data.length > 0) {
+                // Select default or first
+                const defaultProfile = data.find(p => p.is_default) || data[0];
+                setSelectedProfile(defaultProfile);
+            } else {
+                setSelectedProfile(null);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleCreateProfile = async () => {
+        if (!newProfileName.trim() || !selectedProduct) return;
+        try {
+            setSaving(true);
+            const res = await fetch('/api/test-rules', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    product_id: selectedProduct._id,
+                    name: newProfileName,
+                    rules: rules, // Inherit current rules
+                    weights: weights,
+                    is_default: profiles.length === 0 // Make default if first one
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                setProfiles([...profiles, data]);
+                setSelectedProfile(data);
+                setIsCreatingProfile(false);
+                setNewProfileName('');
+                setMessage('✅ Profile created successfully!');
+            } else {
+                setMessage(`❌ Failed: ${data.message}`);
+            }
+        } catch (err) {
+            console.error(err);
+            setMessage('❌ Error creating profile');
+        } finally {
+            setSaving(false);
+            setTimeout(() => setMessage(''), 3000);
+        }
+    };
+
+    const handleDeleteProfile = async (e, profileId) => {
+        e.stopPropagation();
+        if (!confirm('Delete this profile?')) return;
+        try {
+            const res = await fetch(`/api/test-rules/${profileId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                const newProfiles = profiles.filter(p => p._id !== profileId);
+                setProfiles(newProfiles);
+                if (selectedProfile?._id === profileId) {
+                    setSelectedProfile(newProfiles.length > 0 ? newProfiles[0] : null);
+                }
+                setMessage('✅ Profile deleted');
+            }
+        } catch (err) {
+            console.error(err);
+            setMessage('❌ Error deleting profile');
+        }
+    };
+
+    const handleSave = async () => {
+        if (!selectedProduct) return;
+        setSaving(true);
+
+        try {
+            if (selectedProfile) {
+                // Update existing profile
+                const res = await fetch(`/api/test-rules/${selectedProfile._id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        rules,
+                        weights
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    // Update local state
+                    setProfiles(profiles.map(p => p._id === data._id ? data : p));
+                    setSelectedProfile(data);
+                    setMessage('✅ Profile updated successfully!');
+                } else {
+                    setMessage('❌ Failed to update profile');
+                }
+            } else {
+                // Legacy: Update ProductMaster directly (if no profiles used yet)
+                const metadata_json = {
+                    category: selectedProduct.category || 'OTHER',
+                    rules,
+                    weights
+                };
+
+                const res = await fetch(`/api/products/${selectedProduct._id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ metadata_json })
+                });
+
+                if (res.ok) {
+                    setMessage('✅ Default rules saved successfully!');
+                    fetchProducts();
+                } else {
+                    setMessage('❌ Failed to save rules');
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            setMessage('❌ Error saving rules');
+        } finally {
+            setSaving(false);
+            setTimeout(() => setMessage(''), 3000);
+        }
     };
 
     const applyTemplate = (templateKey) => {
@@ -234,41 +337,6 @@ const TestRulesManagement = () => {
         });
     };
 
-    const saveRules = async () => {
-        if (!selectedProduct) return;
-
-        setLoading(true);
-        try {
-            const metadata_json = {
-                category: selectedProduct.category || 'OTHER',
-                rules,
-                weights
-            };
-
-            const res = await fetch(`/api/products/${selectedProduct._id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ metadata_json })
-            });
-
-            if (res.ok) {
-                setMessage('✅ Rules saved successfully!');
-                fetchProducts(); // Refresh
-            } else {
-                setMessage('❌ Failed to save rules');
-            }
-        } catch (err) {
-            setMessage('❌ Error saving rules');
-            console.error(err);
-        } finally {
-            setLoading(false);
-            setTimeout(() => setMessage(''), 3000);
-        }
-    };
-
     if (!isAdmin && !isTenantAdmin) {
         return (
             <div className="max-w-4xl mx-auto p-6">
@@ -286,20 +354,21 @@ const TestRulesManagement = () => {
 
     return (
         <div className="max-w-7xl mx-auto p-6">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-primary mb-2">Test Rules Management</h1>
-                <p className="text-text-muted mb-4">Configure validation rules and weights for each product category</p>
-
-                {/* Quick Start Guide */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h3 className="font-semibold text-blue-900 mb-2">Quick Start:</h3>
-                    <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                        <li>Select a product from the left panel</li>
-                        <li>Click a template (Book, Mobile, etc.) to apply pre-configured rules</li>
-                        <li>Customize rules and weights as needed</li>
-                        <li>Click "Save Rules" to apply</li>
-                    </ol>
+            <div className="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-bold text-primary mb-2">Test Rules Management</h1>
+                    <p className="text-text-muted">Configure validation rules and weights for each product category</p>
                 </div>
+                {selectedProduct && (
+                    <button
+                        onClick={handleSave}
+                        disabled={saving || !canEdit}
+                        className={`px-6 py-2 rounded-lg text-white font-medium flex items-center gap-2 ${saving ? 'bg-gray-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                    >
+                        <Save size={20} />
+                        {saving ? 'Saving...' : 'Save Changes'}
+                    </button>
+                )}
             </div>
 
             {message && (
@@ -308,46 +377,87 @@ const TestRulesManagement = () => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Product Selector */}
-                <div className="card p-6">
-                    <h2 className="text-lg font-bold text-primary mb-4">Select Product</h2>
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {products.map(product => {
-                            const hasRules = product.metadata_json &&
-                                product.metadata_json.rules &&
-                                Object.keys(product.metadata_json.rules).length > 0;
-
-                            return (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Left Sidebar: Product & Profile Selection */}
+                <div className="lg:col-span-3 space-y-6">
+                    {/* Product List */}
+                    <div className="card p-4 h-96 flex flex-col">
+                        <h2 className="text-lg font-bold text-primary mb-4">1. Select Product</h2>
+                        <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+                            {products.map(product => (
                                 <button
                                     key={product._id}
-                                    onClick={() => handleProductSelect(product)}
-                                    className={`w-full text-left p-3 rounded-lg transition-colors ${selectedProduct?._id === product._id
-                                        ? 'bg-blue-50 border-2 border-blue-500'
-                                        : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                                    onClick={() => setSelectedProduct(product)}
+                                    className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${selectedProduct?._id === product._id
+                                            ? 'bg-indigo-50 text-indigo-700 font-medium border-l-4 border-indigo-600'
+                                            : 'text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex-1">
-                                            <div className="font-semibold text-sm">{product.product_name}</div>
-                                            <div className="text-xs text-text-muted">{product.brand} • {product.category}</div>
-                                        </div>
-                                        {hasRules && (
-                                            <div className="ml-2">
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                    ✓ Rules
-                                                </span>
-                                            </div>
+                                    <div className="font-medium">{product.product_name}</div>
+                                    <div className="text-xs text-gray-500">{product.category}</div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Profile List */}
+                    {selectedProduct && (
+                        <div className="card p-4">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-lg font-bold text-primary">2. Test Profile</h2>
+                                <button
+                                    onClick={() => setIsCreatingProfile(true)}
+                                    className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 flex items-center gap-1"
+                                >
+                                    <Plus size={12} /> New
+                                </button>
+                            </div>
+
+                            {isCreatingProfile && (
+                                <div className="mb-4 p-3 bg-gray-50 rounded border">
+                                    <input
+                                        type="text"
+                                        placeholder="Profile Name (e.g. Strict)"
+                                        className="w-full text-sm border-gray-300 rounded mb-2 p-1"
+                                        value={newProfileName}
+                                        onChange={(e) => setNewProfileName(e.target.value)}
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                        <button onClick={() => setIsCreatingProfile(false)} className="text-xs text-gray-500">Cancel</button>
+                                        <button onClick={handleCreateProfile} className="text-xs bg-indigo-600 text-white px-2 py-1 rounded">Create</button>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="space-y-2">
+                                {profiles.length === 0 && <p className="text-sm text-gray-500 italic">No profiles. Using default.</p>}
+                                {profiles.map(profile => (
+                                    <div key={profile._id} className="flex items-center justify-between group">
+                                        <button
+                                            onClick={() => setSelectedProfile(profile)}
+                                            className={`flex-1 text-left px-3 py-2 rounded-md text-sm flex items-center gap-2 ${selectedProfile?._id === profile._id
+                                                    ? 'bg-indigo-50 text-indigo-700 font-medium'
+                                                    : 'text-gray-700 hover:bg-gray-50'
+                                                }`}
+                                        >
+                                            <FileText size={14} />
+                                            {profile.name}
+                                            {profile.is_default && <span className="text-[10px] bg-gray-200 px-1 rounded text-gray-600">Default</span>}
+                                        </button>
+                                        {selectedProfile?._id === profile._id && (
+                                            <button onClick={(e) => handleDeleteProfile(e, profile._id)} className="text-gray-400 hover:text-red-600 px-2">
+                                                <Trash2 size={14} />
+                                            </button>
                                         )}
                                     </div>
-                                </button>
-                            );
-                        })}
-                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Rule Editor */}
-                <div className="lg:col-span-2 space-y-6">
+                {/* Right Content: Rule Editor */}
+                <div className="lg:col-span-9 space-y-6">
                     {/* Template Library */}
                     <div className="card p-6">
                         <div className="mb-4">
@@ -472,82 +582,10 @@ const TestRulesManagement = () => {
                                     ))}
                                 </div>
                             </div>
-
-                            {/* Actions */}
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={saveRules}
-                                    disabled={loading || !canEdit}
-                                    className="btn btn-primary flex-1 flex items-center justify-center gap-2"
-                                    title={!canEdit ? "You don't have permission to edit rules" : ""}
-                                >
-                                    <Save size={20} />
-                                    {loading ? 'Saving...' : canEdit ? 'Save Rules' : 'View Only'}
-                                </button>
-                                <button
-                                    onClick={() => handleProductSelect(selectedProduct)}
-                                    className="btn btn-outline flex items-center gap-2"
-                                >
-                                    <RotateCcw size={20} />
-                                    Reset
-                                </button>
-                            </div>
                         </>
                     )}
                 </div>
             </div>
-
-            {/* Variant Creation Modal */}
-            {showVariantModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                        <h3 className="text-xl font-bold mb-4">Create Product Variant</h3>
-                        <p className="text-sm text-text-muted mb-4">
-                            Create a new variant for this category to define specific rules.
-                        </p>
-                        <form onSubmit={handleCreateVariant}>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Variant Name</label>
-                                    <input
-                                        type="text"
-                                        className="input-field w-full"
-                                        value={variantData.name}
-                                        onChange={e => setVariantData({ ...variantData, name: e.target.value })}
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium mb-1">Unique SKU</label>
-                                    <input
-                                        type="text"
-                                        className="input-field w-full"
-                                        value={variantData.sku}
-                                        onChange={e => setVariantData({ ...variantData, sku: e.target.value })}
-                                        required
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex justify-end gap-3 mt-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowVariantModal(false)}
-                                    className="btn btn-ghost"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary"
-                                    disabled={loading}
-                                >
-                                    {loading ? 'Creating...' : 'Create Variant'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

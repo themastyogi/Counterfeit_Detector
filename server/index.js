@@ -57,28 +57,13 @@ const scanRoutes = require('./routes/scanRoutes');
 const referenceRoutes = require('./routes/referenceRoutes');
 
 const { initializeAdmin } = require('./controllers/authController');
-
-// Register routes in correct order
-app.use('/api/auth', authRoutes);
-app.use('/api', analysisRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/tenants', tenantRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/scan', scanRoutes);
-app.use('/api/references', referenceRoutes);
-
-// Test management routes - Mounted at /api/tm to avoid conflict with adminRoutes middleware
-if (process.env.NODE_ENV !== 'production') {
-    console.log('Loading test management routes...');
-    try {
-        const testManagementRoutes = require('./routes/testManagementRoutes');
-        console.log('âœ… Test management routes loaded successfully');
-        app.use('/api/tm', testManagementRoutes);
-        console.log('âœ… Test management routes registered at /api/tm');
+const testManagementRoutes = require('./routes/testManagementRoutes');
+console.log('âœ… Test management routes loaded successfully');
+app.use('/api/tm', testManagementRoutes);
+console.log('âœ… Test management routes registered at /api/tm');
     } catch (error) {
-        console.error('âŒ Error loading test management routes:', error.message);
-    }
+    console.error('âŒ Error loading test management routes:', error.message);
+}
 }
 
 // Serve static files from uploads directory (PUBLIC for image display)

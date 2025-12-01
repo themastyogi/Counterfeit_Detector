@@ -210,14 +210,57 @@ async function evaluateScan(product, scanImages, visionResult, options = {}) {
         return result;
     }
 
-    // MODE 1: Reference-based comparison
+    // MODE 1: Reference-based comparison (Explicit or Auto-detected)
     if (options.reference_id) {
         result.used_mode = 'REFERENCE_COMPARE';
-        await evaluateReferenceMode(product, scanImages, visionResult, options.reference_id, result, weights);
+        await evaluateReferenceMode(product, scanImages, visionResult, options.reference_id, result, weights, options.ruleSet);
     } else {
-        // MODE 2: Hybrid Master + Cloud
-        result.used_mode = 'MASTER_PLUS_CLOUD';
-        await evaluateHybridMode(product, scanImages, visionResult, result, rules, weights);
+        // Check if there are ANY references for this product to do Auto-Matching
+        const ProductReference = require('../models/ProductReference');
+        const references = await ProductReference.find({ product_id: product._id, is_active: true }).limit(50); // Limit to 50 for performance
+
+        if (references.length > 0) {
+            console.log(`🔄 Auto-matching against ${references.length} references...`);
+            result.used_mode = 'REFERENCE_COMPARE_AUTO';
+
+            // Find best match
+            let bestMatch = { similarity: 0, reference: null, details: null };
+
+            for (const ref of references) {
+                try {
+                    const comparison = await computeImageSimilarity(
+                        scanImages,
+                        [ref.reference_image_path],
+                        visionResult,
+                        ref.fingerprint,
+                        product.brand
+                    );
+
+                    const score = typeof comparison === 'object' ? comparison.score : comparison;
+                    if (score > bestMatch.similarity) {
+                        bestMatch = { similarity: score, reference: ref, details: comparison };
+                    }
+                } catch (e) {
+                    console.error('Error comparing ref:', e);
+                }
+            }
+
+            // Use the best match if it's decent (>40%)
+            if (bestMatch.reference && bestMatch.similarity > 0.4) {
+                console.log(`✅ Best match found: ${bestMatch.reference._id} (${(bestMatch.similarity * 100).toFixed(0)}%)`);
+                await evaluateReferenceMode(product, scanImages, visionResult, bestMatch.reference._id, result, weights, options.ruleSet);
+                result.debug_info.auto_matched_reference = bestMatch.reference._id;
+            } else {
+                // Fallback to Hybrid if no good match found
+                console.log('⚠️ No good reference match found, falling back to Hybrid mode');
+                result.used_mode = 'MASTER_PLUS_CLOUD';
+                await evaluateHybridMode(product, scanImages, visionResult, result, rules, weights, options.ruleSet);
+            }
+        } else {
+            // MODE 2: Hybrid Master + Cloud (No references exist)
+            result.used_mode = 'MASTER_PLUS_CLOUD';
+            await evaluateHybridMode(product, scanImages, visionResult, result, rules, weights, options.ruleSet);
+        }
     }
 
     // Calculate final risk score
@@ -230,8 +273,11 @@ async function evaluateScan(product, scanImages, visionResult, options = {}) {
 /**
  * Evaluate using Reference Comparison mode
  */
-async function evaluateReferenceMode(product, scanImages, visionResult, referenceId, result, weights) {
+async function evaluateReferenceMode(product, scanImages, visionResult, referenceId, result, defaultWeights, ruleSet = null) {
     const ProductReference = require('../models/ProductReference');
+
+    // Use ruleSet weights if provided, otherwise default
+    const weights = ruleSet ? (ruleSet.weights || defaultWeights) : defaultWeights;
 
     try {
         const reference = await ProductReference.findById(referenceId);
@@ -349,7 +395,10 @@ async function evaluateReferenceMode(product, scanImages, visionResult, referenc
 /**
  * Evaluate using Hybrid Master + Cloud mode
  */
-async function evaluateHybridMode(product, scanImages, visionResult, result, rules, weights) {
+async function evaluateHybridMode(product, scanImages, visionResult, result, defaultRules, defaultWeights, ruleSet = null) {
+    // Use ruleSet if provided
+    const rules = ruleSet ? (ruleSet.rules || defaultRules) : defaultRules;
+    const weights = ruleSet ? (ruleSet.weights || defaultWeights) : defaultWeights;
     // Parse identifiers from OCR
     const parsedIdentifiers = parseIdentifiers(visionResult.textDetection?.text || '');
     result.debug_info.parsed_identifiers = parsedIdentifiers;

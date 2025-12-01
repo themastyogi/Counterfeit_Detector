@@ -98,9 +98,9 @@ const ScanResult = () => {
                                     <div className="text-sm font-medium text-text-muted text-center">Reference: {referenceData.referenceName || 'Official Product'}</div>
 
                                     {/* DEBUG INFO */}
-                                    <div className="text-xs text-red-500 break-all">
+                                    {/* <div className="text-xs text-red-500 break-all">
                                         DEBUG: {JSON.stringify(referenceData)}
-                                    </div>
+                                    </div> */}
 
                                     <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-border shadow-sm relative">
                                         {referenceData.referenceImage ? (
@@ -181,6 +181,7 @@ const ScanResult = () => {
                                                 </button>
                                             </div>
                                         </div>
+
                                         <div className="grid grid-cols-2 gap-4 pt-2">
                                             <div>
                                                 <span className="text-text-muted text-xs block mb-1">Date</span>
@@ -191,10 +192,43 @@ const ScanResult = () => {
                                                 <span className="font-medium text-primary">{new Date(result.createdAt).toLocaleTimeString()}</span>
                                             </div>
                                         </div>
-                                        <div>
-                                            <span className="text-text-muted text-xs block mb-1">Mode</span>
-                                            <span className="badge bg-blue-100 text-blue-800">{result.scan_type}</span>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <span className="text-text-muted text-xs block mb-1">Product Category</span>
+                                                <div className="font-medium text-gray-900">{result.product_name}</div>
+                                            </div>
+                                            <div>
+                                                <span className="text-text-muted text-xs block mb-1">Scan Mode</span>
+                                                <div className="font-medium text-gray-900">{result.scan_type}</div>
+                                            </div>
                                         </div>
+
+                                        {/* New: Reference Info */}
+                                        {result.reference_comparison && (
+                                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                                <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Reference Used</span>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="font-medium text-gray-900">
+                                                        {result.reference_comparison.referenceName || 'Standard Reference'}
+                                                    </span>
+                                                    {/* Check flags for auto-match */}
+                                                    {result.flags_json?.used_mode === 'AUTO_REFERENCE_MATCH' && (
+                                                        <span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                            ✨ Auto-Matched
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* New: Rule Profile Info */}
+                                        {result.rule_profile_name && (
+                                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                                <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Test Profile</span>
+                                                <div className="font-medium text-gray-900">{result.rule_profile_name}</div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

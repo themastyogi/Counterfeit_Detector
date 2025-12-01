@@ -116,7 +116,7 @@ const PrintableReport = ({ result, testerName, testDate, remarks }) => {
                         <div>
                             <p style={{ fontWeight: 'bold', marginBottom: '8px', textAlign: 'center' }}>Scanned Image</p>
                             <div style={{ border: '2px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', aspectRatio: '1' }}>
-                                <img src={result.image_url} alt="Scanned" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <img src={result.image_path} alt="Scanned" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
                         </div>
                         <div>

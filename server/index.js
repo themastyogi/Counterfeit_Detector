@@ -50,6 +50,25 @@ if (!fs.existsSync(referencesDir)) {
 // Routes - ORDER MATTERS!
 const authRoutes = require('./routes/authRoutes');
 const analysisRoutes = require('./routes/analysisRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const tenantRoutes = require('./routes/tenantRoutes');
+const productRoutes = require('./routes/productRoutes');
+const scanRoutes = require('./routes/scanRoutes');
+const referenceRoutes = require('./routes/referenceRoutes');
+const testRuleRoutes = require('./routes/testRuleRoutes');
+const { initializeAdmin } = require('./controllers/authController');
+
+// Register API routes
+app.use('/api/auth', authRoutes);
+app.use('/api/analysis', analysisRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/tenants', tenantRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/scan', scanRoutes);
+app.use('/api/references', referenceRoutes);
+app.use('/api/test-rules', testRuleRoutes);
+
+// Basic Route (Dev only)
 if (process.env.NODE_ENV !== 'production') {
     app.get('/', (req, res) => {
         res.send('Counterfeit Detector API is running');

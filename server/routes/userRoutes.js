@@ -17,7 +17,7 @@ router.get('/', verifyToken, isSystemAdmin, async (req, res) => {
 // Create a new user
 router.post('/', verifyToken, isSystemAdmin, async (req, res) => {
     try {
-        const { fullName, email, password, role, status } = req.body;
+        const { fullName, email, password, role, status, tenant_id } = req.body;
         if (!fullName || !email || !password) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
@@ -26,7 +26,7 @@ router.post('/', verifyToken, isSystemAdmin, async (req, res) => {
             return res.status(400).json({ message: 'Email already exists' });
         }
         const hashed = await bcrypt.hash(password, 10);
-        const newUser = new User({ fullName, email, password: hashed, role, status });
+        const newUser = new User({ fullName, email, password: hashed, role, status, tenant_id: tenant_id || null });
         await newUser.save();
         const userToReturn = newUser.toObject();
         delete userToReturn.password;

@@ -320,6 +320,7 @@ export const UserModal = ({ show, onClose, onSubmit, formData, setFormData, mode
                             name="password"
                             value={formData.password || ''}
                             onChange={handleChange}
+                            className="input-field"
                             placeholder="••••••••"
                             required
                         />

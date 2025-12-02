@@ -67,6 +67,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/scan', scanRoutes);
 app.use('/api/references', referenceRoutes);
 app.use('/api/test-rules', testRuleRoutes);
+app.use('/api/users', userRoutes);
 
 // Basic Route (Dev only)
 if (process.env.NODE_ENV !== 'production') {

@@ -255,7 +255,7 @@ const ScanResult = () => {
                                                     <p className="text-sm text-text-muted">
                                                         {referenceData?.details?.colorMatch > 0.8
                                                             ? `Colors match the reference standard (${(referenceData.details.colorMatch * 100).toFixed(0)}% similarity).`
-                                                            : `Significant color deviation detected (${(referenceData.details.colorMatch * 100).toFixed(0)}% similarity). This may indicate a photocopy or poor print quality.`}
+                                                            : `Significant color deviation detected (${(referenceData?.details?.colorMatch * 100 || 0).toFixed(0)}% similarity). This may indicate a photocopy or poor print quality.`}
                                                     </p>
                                                 </div>
                                             </div>
@@ -268,7 +268,7 @@ const ScanResult = () => {
                                                     <p className="text-sm text-text-muted">
                                                         {referenceData?.details?.textMatch > 0.8
                                                             ? `Text content and layout align with the reference (${(referenceData.details.textMatch * 100).toFixed(0)}% match).`
-                                                            : `Text discrepancies found (${(referenceData.details.textMatch * 100).toFixed(0)}% match). Fonts or layout may differ from the original.`}
+                                                            : `Text discrepancies found (${(referenceData?.details?.textMatch * 100 || 0).toFixed(0)}% match). Fonts or layout may differ from the original.`}
                                                     </p>
                                                 </div>
                                             </div>

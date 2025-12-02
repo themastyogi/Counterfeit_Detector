@@ -26,7 +26,7 @@ const scanHistorySchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['LIKELY_GENUINE', 'SUSPICIOUS', 'HIGH_RISK'],
+        enum: ['LIKELY_GENUINE', 'SUSPICIOUS', 'HIGH_RISK', 'INDETERMINATE'],
         required: true
     },
     risk_score: {
